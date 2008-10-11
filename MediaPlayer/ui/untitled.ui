@@ -1,0 +1,133 @@
+<ui version="4.0" >
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow" >
+  <property name="windowModality" >
+   <enum>Qt::NonModal</enum>
+  </property>
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>363</width>
+    <height>187</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>n00bar</string>
+  </property>
+  <widget class="QWidget" name="centralwidget" >
+   <layout class="QGridLayout" >
+    <item row="0" column="0" >
+     <layout class="QHBoxLayout" >
+      <item>
+       <widget class="QPushButton" name="playButton" >
+        <property name="text" >
+         <string>Play/Pause</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="stopButton" >
+        <property name="text" >
+         <string>Stop</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="volumeLabel" >
+        <property name="text" >
+         <string>Volume</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSlider" name="volumeBar" >
+        <property name="minimumSize" >
+         <size>
+          <width>129</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximum" >
+         <number>100</number>
+        </property>
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item rowspan="7" row="0" column="1" >
+     <layout class="QVBoxLayout" >
+      <item>
+       <widget class="QLabel" name="id3Art" >
+        <property name="text" >
+         <string/>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="1" column="0" >
+     <layout class="QHBoxLayout" >
+      <item>
+       <widget class="QSlider" name="seekBar" >
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="seekLabel" >
+        <property name="text" >
+         <string>0:0</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="2" column="0" >
+     <layout class="QHBoxLayout" >
+      <item>
+       <widget class="QLineEdit" name="pathBox" />
+      </item>
+      <item>
+       <widget class="QPushButton" name="changeButton" >
+        <property name="text" >
+         <string>Browse</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="3" column="0" >
+     <widget class="QLabel" name="artistLabel" >
+      <property name="text" >
+       <string/>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="0" >
+     <widget class="QLabel" name="albumLabel" >
+      <property name="text" >
+       <string/>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="0" >
+     <widget class="QLabel" name="titleLabel" >
+      <property name="text" >
+       <string/>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="0" >
+     <widget class="QLineEdit" name="seekBox" />
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
