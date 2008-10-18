@@ -1,10 +1,4 @@
 #include "LuaTcpConsole.h"
-#include <boost/bind.hpp>
-#include <boost/algorithm/string.hpp>
-#include <assert.h>
-#include <iostream>
-#include <luabind/luabind.hpp>
-#include <luabind/class.hpp>
 #include "LuaRegister.h"
 
 LuaTcpServer::LuaTcpServer()

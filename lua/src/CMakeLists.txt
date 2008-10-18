@@ -1,4 +1,5 @@
 project(lua)
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 set( sources lapi.c lcode.c ldebug.c ldo.c ldump.c lfunc.c lgc.c llex.c lmem.c
 	lobject.c lopcodes.c lparser.c lstate.c lstring.c ltable.c ltm.c
 	lundump.c lvm.c lzio.c

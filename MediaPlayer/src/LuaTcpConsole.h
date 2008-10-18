@@ -1,16 +1,7 @@
 #ifndef QSMP_LUATCPCONSOLE
 #define QSMP_LUATCPCONSOLE
 
-#include <QtNetwork>
-extern "C" {
-#include "lua.h"
-#include "lualib.h"
-#include "lauxlib.h"
-}
-#include <luabind/scope.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/function.hpp>
+#include "common.h"
 
 #define QSMP_LUA_CONSOLE_PORT 12345
 

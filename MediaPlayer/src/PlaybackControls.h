@@ -1,18 +1,7 @@
 #ifndef PLAYBACKCONTROLS_H
 #define PLAYBACKCONTROLS_H
 
-#include <QObject>
-#include <QString>
-#include <QPicture>
-
-#include <phonon/mediaobject.h>
-#include <phonon/audiooutput.h>
-#include <phonon/mediasource.h>
-#include <phonon/videowidget.h>
-
-#include "utilities.h"
 #include "common.h"
-#include <id3/tag.h>
 
 #define SETTINGS_FILE "settings.ini"
 

@@ -1,7 +1,7 @@
 #ifndef QSMP_LUAREGISTER
 #define QSMP_LUAREGISTER
 
-#include <lua.h>
+#include "common.h"
 
 class LuaTcpSocket;
 void registerAll(lua_State* L);
