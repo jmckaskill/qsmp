@@ -16,10 +16,27 @@
 
 #endif
 
-//#include <windows.h>
-//#include <tchar.h>
+// All third party headers should go in here (even if they are used in only one file)
+// This file is then precompiled
+
+//STL Includes
+#include <vector>
+#include <string>
 #include <iostream>
-//#include <boost/shared_ptr.hpp>
+#include <algorithm>
+
+//Boost Includes
+#include <boost/shared_ptr.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <boost/bind.hpp>
+#include <boost/bind.hpp>
+#include <boost/algorithm/string.hpp>
+
+//TBB Includes
+
+
+//Lua Includes
+#include <lua.h>
 
 #ifdef _WIN32
 #pragma comment(lib, "strmiids.lib")
