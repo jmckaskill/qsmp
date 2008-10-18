@@ -48,3 +48,9 @@ int PlaylistModel<RandomAccessRange>::columnCount(const QModelIndex& parent /* =
     return 0;
   }
 }
+
+template<class RandomAccessRange>
+void PlaylistModel<RandomAccessRange>::onDoubleClicked(const QModelIndex &index)
+{
+  emit itemSelected(QString::fromStdString((boost::begin(paths_) + index.row())->path_.file_string()));
+}

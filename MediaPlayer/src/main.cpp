@@ -122,6 +122,7 @@ namespace
   {
     return output_filter_iterator<Pred,OutputIterator,ValueType>(pred,output);
   }
+
 }
 
 int main(int argc, char **argv)
@@ -135,11 +136,10 @@ int main(int argc, char **argv)
     app.setOrganizationDomain("foobar.co.nz");
 
     MainWin mywindow;
-    //mywindow.show();
 
 
     std::vector<Entry> paths;
-    std::copy(recursive_directory_iterator("E:/Music/Andrew"),
+    std::copy(recursive_directory_iterator("E:/Music/Andrew/A"),
               recursive_directory_iterator(),
               make_ofi_with_value_type<recursive_directory_iterator::value_type>(
                   is_extension(bind(equals(),
@@ -158,9 +158,13 @@ int main(int argc, char **argv)
     view_window.setCentralWidget(view);
     view_window.show();
 
+    QObject::connect(view,SIGNAL(doubleClicked(QModelIndex)),model,SLOT(onDoubleClicked(QModelIndex)));
+    QObject::connect(model,SIGNAL(itemSelected(QString)),mywindow.control,SLOT(setFilePath(QString)));
+
 
     LuaTcpServer lua;
 
+    mywindow.show();
     return app.exec();
   }
   catch(std::exception& e)

@@ -131,6 +131,8 @@ void PlaybackControls::setFilePath(QString file)
 {
 	Stop();
 	mFile = file;
+  LoadFile();
+  mMediaObject.play();
 	emit pathChanged(mFile);
 }
 
