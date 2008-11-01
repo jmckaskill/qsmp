@@ -2,13 +2,13 @@ project(qsmp)
 
 #TODO: Boost and TBB have static paths for now ... will change to
 #paths set from ccmake when I get around to it
-set(BOOST_ROOT E:/SCM/boost_1_36_0)
+set(BOOST_ROOT E:/SCM/boost_1_36_0 CACHE FILEPATH "boost root")
 set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost COMPONENTS filesystem system)
 
-set(TBB_ROOT E:/SCM/tbb-win32)
+set(TBB_ROOT E:/SCM/tbb-win32 CACHE FILEPATH "tbb root")
 set(TBB_INCLUDE_DIR ${TBB_ROOT}/include)
-set(TBB_LIBRARY_DIR ${TBB_ROOT}/ia32/vc8/lib)
+set(TBB_LIBRARY_DIR ${TBB_ROOT}/ia32/vc8/lib CACHE FILEPATH "tbb lib dir")
 set(TBB_LIBRARIES debug ${TBB_LIBRARY_DIR}/tbb_debug.lib
                   debug ${TBB_LIBRARY_DIR}/tbbmalloc_debug.lib
                   optimized ${TBB_LIBRARY_DIR}/tbb.lib
@@ -50,7 +50,7 @@ set(sources src/main.cpp
 qt4_wrap_cpp(moc_sources ${moc_headers})
 qt4_wrap_ui(moc_sources ${ui})
 add_executable(qsmp ${sources} ${moc_headers} ${headers} ${ui} ${moc_sources})
-message(${Boost_LIBRARIES})
+
 target_link_libraries(qsmp 
                       ${QT_LIBRARIES}
 		      ${Boost_LIBRARIES}

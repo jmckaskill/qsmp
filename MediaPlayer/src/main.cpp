@@ -19,8 +19,10 @@ int main(int argc, char **argv)
     app.setOrganizationName("Foobar NZ");
     app.setOrganizationDomain("foobar.co.nz");
 
+    std::string path = (argc > 1) ? argv[1] : "";
+
     std::vector<Entry> paths;
-    std::copy(recursive_directory_iterator("E:/Music/Andrew/A"),
+    std::copy(recursive_directory_iterator(path),
               recursive_directory_iterator(),
               valueOutputFilterIterator<recursive_directory_iterator::value_type>(
                   testExtension(

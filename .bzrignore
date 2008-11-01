@@ -1,4 +1,4 @@
-build
+build*
 *.ncb
 *.user
 *.suo
