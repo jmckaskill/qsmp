@@ -9,8 +9,11 @@ link_directories(${CMAKE_CURRENT_SOURCE_DIR}/id3lib/libprj
                  ${CMAKE_CURRENT_SOURCE_DIR}/id3lib/zlib/prj)
 add_definitions(-D_WIN32_WINNT=0x500)
 
+set(boost_singleton_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/singleton/)
+
 add_subdirectory(lua)
 add_subdirectory(luabind)
 add_subdirectory(id3lib)
 add_subdirectory(MediaPlayer)
 add_subdirectory(MMShellHook)
+

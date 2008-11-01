@@ -1,6 +1,8 @@
 #include "LuaTcpConsole.h"
 #include "LuaRegister.h"
 
+QSMP_BEGIN
+
 LuaTcpServer::LuaTcpServer()
 {
   connect(&server_,SIGNAL(newConnection()),SLOT(onNewConnection()));
@@ -130,7 +132,7 @@ void LuaTcpSocket::onReadyRead()
       //By putting \\\r\n or \\\n, the [\r]\n is escaped
       //Note: need to check for != begin to ensure ii-1/ii-2 is valid
       if (ii != read_buffer_.end() && 
-        ii != read_buffer_.begin())
+	  ii != read_buffer_.begin())
       {
         if (*(ii-1) == '\\')
         {
@@ -139,8 +141,8 @@ void LuaTcpSocket::onReadyRead()
           continue;
         }
         if (ii-1 != read_buffer_.begin() &&
-          *(ii-1) == '\r' &&
-          *(ii-2) == '\\')
+	    *(ii-1) == '\r' &&
+	    *(ii-2) == '\\')
         {
           to_replace.push_back(ii-2);
           ++ii;
@@ -189,3 +191,5 @@ void LuaTcpSocket::onReadyRead()
     read_buffer_.erase(read_buffer_.begin(),ii);
   }
 }
+
+QSMP_END

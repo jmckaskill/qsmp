@@ -19,19 +19,21 @@ include_directories(${Boost_INCLUDE_DIR}
                     ${MMShellHook_SOURCE_DIR}
 		    ${id3lib_INCLUDE_DIR}
 		    ${lua_INCLUDE_DIR}
-		    ${TBB_INCLUDE_DIR})
+		    ${TBB_INCLUDE_DIR}
+		    ${boost_singleton_INCLUDE_DIR})
 
-add_definitions(-DID3LIB_LINKOPTION=1)
+add_definitions(-DID3LIB_LINKOPTION=1
+                -DQT_NO_KEYWORDS)
 
 set(QT_USE_PHONON 1)
 set(QT_USE_QTNETWORK 1)
 find_package(Qt4)
 include(${QT_USE_FILE})
 
-set(moc_headers src/PlaybackControls.h
-                src/MainWin.h
-                src/LuaTcpConsole.h
-                src/PlaylistModel.h)
+set(moc_headers src/LuaTcpConsole.h
+                src/PlaylistModel.h
+                src/Player.h
+                src/PlaylistView.h)
 set(ui ui/untitled.ui)
 set(headers src/common.h
             src/utilities.h
@@ -39,11 +41,11 @@ set(headers src/common.h
 	    src/PlaylistManager.h
 	    src/LuaRegister.h)
 set(sources src/main.cpp
-            src/PlaybackControls_Phonon.cpp
-            src/MainWin.cpp
             src/LuaTcpConsole.cpp
             src/PlaylistModel.inl
-            src/LuaRegister.cpp)
+            src/LuaRegister.cpp
+            src/Player.cpp
+            src/PlaylistView.cpp)
 
 qt4_wrap_cpp(moc_sources ${moc_headers})
 qt4_wrap_ui(moc_sources ${ui})

@@ -75,7 +75,7 @@ HRESULT PlaybackControls::LoadFile()
 	QStringList list = mMediaObject.metaData(Phonon::TitleMetaData);
 //	bool test = list.isEmpty();
 	mAudioOutput.setVolume(mVolume / 100.0);
-	emit volumeChanged(mVolume);
+	volumeChanged(mVolume);
 	return 0;
 }
 
@@ -133,7 +133,7 @@ void PlaybackControls::setFilePath(QString file)
 	mFile = file;
   LoadFile();
   mMediaObject.play();
-	emit pathChanged(mFile);
+	pathChanged(mFile);
 }
 
 QString PlaybackControls::getFilePath()
@@ -150,7 +150,7 @@ void PlaybackControls::editFilePath()
 		mFile = tempFile;
 		LoadFile();
 		mMediaObject.play();
-		emit pathChanged(mFile);
+		pathChanged(mFile);
 	}
 }
 
@@ -163,7 +163,7 @@ void PlaybackControls::browseFilePath()
 		mFile = tempFile;
 		LoadFile();
 		mMediaObject.play();
-		emit pathChanged(mFile);
+		pathChanged(mFile);
 	}
 }
 

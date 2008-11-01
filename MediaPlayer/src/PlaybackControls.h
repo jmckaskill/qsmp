@@ -21,7 +21,7 @@ public:
 	virtual ~PlaybackControls();
 
 	virtual QString getFilePath();
-public slots:
+public Q_SLOTS:
 	virtual void PlayPause();
 	virtual void Stop();
 	virtual void editFilePath();
@@ -39,7 +39,7 @@ public slots:
 	virtual QString getAlbum(QString file);
 	virtual QString getTitle(QString file);
 	virtual QString getComment(QString file);
-signals:
+Q_SIGNALS:
 	virtual void toResize();
 	virtual void pathChanged(QString newFile);
 	virtual void volumeChanged(int volume);

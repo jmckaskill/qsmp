@@ -3,6 +3,8 @@
 
 #include "common.h"
 
+QSMP_BEGIN
+
 #define QSMP_LUA_CONSOLE_PORT 12345
 
 class LuaTcpSocket;
@@ -12,7 +14,7 @@ class LuaTcpServer : public QObject
   Q_OBJECT
 public:
   LuaTcpServer();
-private slots:
+private Q_SLOTS:
   void onNewConnection();
 private:
   void onDisconnect(boost::shared_ptr<LuaTcpSocket> socket);
@@ -29,7 +31,7 @@ class LuaTcpSocket : public QObject
 public:
   LuaTcpSocket(QTcpSocket* socket, boost::function<void ()> disconnect_callback);
   ~LuaTcpSocket();
-private slots:
+private Q_SLOTS:
   void onDisconnect(){disconnect_callback_();}
   void onReadyRead();
 private:
@@ -44,5 +46,6 @@ private:
   read_buffer_t                 read_buffer_;
   std::string                   terminator_;
 };
+QSMP_END
 
 #endif

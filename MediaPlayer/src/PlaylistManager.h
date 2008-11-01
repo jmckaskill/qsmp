@@ -6,19 +6,6 @@ class CollectionVisitor;
 typedef boost::iterator_range<char> Data;
 typedef std::vector<std::pair<MetadataType, bool> > SortCriteria;
 
-enum MetadataType
-{
-  FILE_NAME,
-  METADATA_NUM,
-};
-
-struct MetadataSort
-{
-  bool operator()(const Metadata& l, const Metadata& r)
-  {
-    return (l.type() != r.type()) ? (l.type() < r.type()) : (l.type_specific() < r.type_specific());
-  }
-};
 
 template<class Range1, class Range2>
 int lexicographical_compare_3way(Range1 range1, Range2 range2)
