@@ -7,7 +7,7 @@ QSMP_BEGIN
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-Player::Player(boost::function<Entry *()> get_next)
+Player::Player(boost::function<Media ()> get_next)
 : get_next_(get_next),
   audio_(Phonon::MusicCategory),
   loaded_file_(false)
@@ -19,12 +19,12 @@ Player::Player(boost::function<Entry *()> get_next)
 
 //-----------------------------------------------------------------------------
 
-void Player::PlayFile(Entry* entry, bool play_file)
+void Player::PlayFile(const Media& entry, bool play_file)
 {
   media_.clearQueue();
-  if (entry != NULL)
+  if (entry.valid())
   {
-    media_.setCurrentSource(QString::fromStdString(entry->path_.file_string()));
+    media_.setCurrentSource(QString::fromStdString(entry.path().file_string()));
     if (play_file || loaded_file_)
       media_.play();
     loaded_file_ = true;
@@ -79,7 +79,7 @@ void Player::SetVolume(int volume)
 void Player::EnqueueNext()
 {
   if (!get_next_.empty())
-    media_.enqueue(QString::fromStdString(get_next_()->path_.file_string()));
+    media_.enqueue(QString::fromStdString(get_next_().path().file_string()));
 }
 
 //-----------------------------------------------------------------------------
@@ -110,7 +110,7 @@ void PlayerHistory::Init()
   //We insert a dummy first entry, which makes the next/previous logic
   //much simpler since we can insert an item at the end of the list and even
   //when the list is empty, the current is before this
-  cache_.push_back(NULL);
+  cache_.push_back(Media());
   current_ = cache_.begin();
   queue_end_ = current_;
 }
@@ -119,14 +119,14 @@ void PlayerHistory::Init()
 
 void PlayerHistory::SetPlayer(Player* player)
 {
-  connect(this, SIGNAL(OnPlayFile(Entry*,bool)), player, SLOT(PlayFile(Entry*,bool)));
+  connect(this, SIGNAL(OnPlayFile(Media,bool)), player, SLOT(PlayFile(Media,bool)));
   connect(player, SIGNAL(OnSourceChanged()), this, SLOT(CurrentSourceChanged()));
-  CurrentUpdated(false);
+  UpdateCurrent(current_,true,false);//force through the current item to the player
 }
 
 //-----------------------------------------------------------------------------
 
-void PlayerHistory::PlayFile(Entry* entry)
+void PlayerHistory::PlayFile(const Media& entry)
 {
   cache_t::iterator i = current_;
   if (i != cache_.end())
@@ -138,7 +138,7 @@ void PlayerHistory::PlayFile(Entry* entry)
 
 //-----------------------------------------------------------------------------
 
-void PlayerHistory::SetNextCallback(boost::function<Entry* ()> callback)
+void PlayerHistory::SetNextCallback(boost::function<Media ()> callback)
 {
   get_next_ = callback;
   InvalidateCache();
@@ -168,10 +168,9 @@ void PlayerHistory::InvalidateCache()
   }
   if (current_erased)
   {
-    current_ = cache_.end();
-    CurrentUpdated(true);
+    UpdateCurrent(cache_.end(),true,false);
   }
-  OnCacheUpdate();
+  OnHistoryUpdated();
 }
 
 //-----------------------------------------------------------------------------
@@ -180,95 +179,97 @@ void PlayerHistory::CurrentSourceChanged()
 {
   if (next_enqueued_)
   {
-    bool shift_queue = (current_ == queue_end_);
-    ++current_;
     next_enqueued_ = false;
-    if (shift_queue)
-      queue_end_ = current_;
+
+    UpdateCurrent(GetNext(current_),false,false);
   }
   current_played_ = true;
 }
 
 //-----------------------------------------------------------------------------
 
-Entry* PlayerHistory::Next(bool force_play)
+Media PlayerHistory::Next(bool force_play)
 {
-  bool shift_queue = (current_ == queue_end_);
-
-  ++current_;
-  if (current_ == cache_.end())
-  {
-    Entry* next = get_next_.empty() ? NULL : get_next_();
-    if (next != NULL)
-    {
-      cache_.push_back(next);
-      --current_;
-    }
-  }
-
-  if (shift_queue)
-  {
-    queue_end_ = current_;
-  }
-
-
-  OnCacheUpdate();
-  if (!shift_queue)
-    OnQueueUpdate();
-
-  return CurrentUpdated(force_play);
+  return UpdateCurrent(GetNext(current_),true,force_play);
 }
 
 //-----------------------------------------------------------------------------
 
-Entry* PlayerHistory::PlayerNext()
+Media PlayerHistory::Previous(bool force_play)
+{
+  cache_t::iterator i = current_;
+  if (i != cache_.begin())
+    --i;
+  return UpdateCurrent(i,true,force_play);
+}
+
+//-----------------------------------------------------------------------------
+
+Media PlayerHistory::UpdateCurrent(cache_t::iterator new_current, bool send_play, bool force_play)
+{
+  Media ret;
+
+  //Pre change
+  bool shift_queue = (current_ == queue_end_);
+  if (current_ != cache_.end() && current_->valid())
+    current_->set_queue_index(-1);
+
+  current_ = new_current;
+
+  //Post change
+  if (current_ != cache_.end() && current_->valid())
+  {
+    current_->set_queue_index(0);
+    ret = *current_;
+  }
+  if (shift_queue)
+    queue_end_ = current_;
+
+  //Update the queue_index's
+  cache_t::iterator ii;
+  int i = 0;
+  for(ii = current_; ii != queue_end_; ++ii)
+  {
+    if (ii->valid())
+      ii->set_queue_index(i++);
+  }
+
+  if (send_play)
+  {
+    current_played_ = false;
+    next_enqueued_ = false;
+  }
+
+  OnHistoryUpdated();
+  if (send_play)
+    OnPlayFile(ret, force_play);
+  return ret;
+}
+
+//-----------------------------------------------------------------------------
+
+PlayerHistory::cache_t::iterator PlayerHistory::GetNext(cache_t::iterator ii)
+{
+  ++ii;
+  if (ii == cache_.end())
+  {
+    Media next = get_next_.empty() ? Media() : get_next_();
+    if (next.valid())
+    {
+      cache_.push_back(next);
+      --ii;
+    }
+  }
+  return ii;
+}
+
+//-----------------------------------------------------------------------------
+
+Media PlayerHistory::PlayerNext()
 {
   next_enqueued_ = true;
-  cache_t::iterator i = current_;
-  assert(i != cache_.end());//this function should only be called if we are currently playing something
-  ++i;
-  if (i == cache_.end())
-  {
-    Entry* next = get_next_.empty() ? NULL : get_next_();
-    if (next != NULL)
-    {
-      cache_.push_back(next);
-      --i;
-    }
-  }
-  return (i != cache_.end()) ? *i : NULL;
-}
-
-//-----------------------------------------------------------------------------
-
-Entry* PlayerHistory::Previous(bool force_play)
-{
-  bool shift_queue = (queue_end_ == current_);
-
-  if (current_ != cache_.begin())
-    --current_;
-
-  if (shift_queue)
-    queue_end_ = current_;
-
-  OnCacheUpdate();
-  if (!shift_queue)
-    OnQueueUpdate();
-
-  return CurrentUpdated(force_play);
-}
-
-//-----------------------------------------------------------------------------
-
-Entry* PlayerHistory::CurrentUpdated(bool force_play)
-{
-  Entry* ret = NULL;
-  if (current_ != cache_.end())
-    ret = *current_;
-  current_played_ = false;
-  next_enqueued_ = false;
-  OnPlayFile(ret, force_play);
-  return ret;
+  cache_t::iterator i = GetNext(current_);
+  return (i != cache_.end()) ? *i : Media();
 }
 
 //-----------------------------------------------------------------------------

@@ -2,10 +2,10 @@
 #define QSMP_PLAYER_H_
 
 #include "common.h"
+#include "utilities.h"
 
 QSMP_BEGIN
 
-class Entry;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -15,14 +15,14 @@ class Player : public QObject
 {
   Q_OBJECT
 public:
-  Player(boost::function<Entry* ()> get_next = boost::function<Entry* ()>());
+  Player(boost::function<Media ()> get_next = boost::function<Media ()>());
 
   Phonon::State        status()const{return media_.state();}
   Phonon::AudioOutput* audio(){return &audio_;}
   Phonon::MediaObject* media(){return &media_;}
 
 public Q_SLOTS:
-  void PlayFile(Entry* entry, bool play_file = true);
+  void PlayFile(const Media& entry, bool play_file = true);
   void Play();
   void Pause();
   void Stop();
@@ -37,7 +37,7 @@ Q_SIGNALS:
 private Q_SLOTS:
   void EnqueueNext();
 private:
-  boost::function<Entry* ()> get_next_;
+  boost::function<Media ()>  get_next_;
 	Phonon::MediaObject        media_;
 	Phonon::AudioOutput        audio_;
 	Phonon::Path               audio_path_;
@@ -56,47 +56,130 @@ public:
   PlayerHistory();
   PlayerHistory(Player* player);
 
-  //Index values:
-  // -ve : already played
-  // 0   : currently playing / next to be played if stopped
-  // +ve : next to be played starting with entries in the queue and then however many items have 
-  //       been pulled into the cache
-  tuple<Entry*, uint /*queue_index*/>      GetEntry(int index);
+  class const_cache_iterator : public std::iterator<std::bidirectional_iterator_tag,const Media>
+  {
+  public:
+    reference operator*()const
+    {
+      assert(iter_ != history_->cache_.end());
+      return *iter_;
+    }
+    pointer operator->()const
+    {
+      assert(iter_ != history_->cache_.end());
+      return iter_.operator ->();
+    }
 
-  void PlayFile(Entry* entry);
-  void SetNextCallback(boost::function<Entry* ()> callback);
+    const_cache_iterator& operator++()//preincrement
+    {
+      iter_ = history_->GetNext(iter_);
+      ++index_;
+      return *this;
+    }
+    const_cache_iterator  operator++(int)//postincrement
+    {
+      const_cache_iterator ret = *this;
+      ++(*this);
+      return ret;
+    }
+    const_cache_iterator& operator--()//predecrement
+    {
+      --iter_;
+      return *this;
+    }
+    const_cache_iterator  operator--(int)//postdecrement
+    {
+      return const_cache_iterator(history_,iter_--,index_--);
+    }
+
+    bool operator==(const_cache_iterator r)
+    {
+      assert(history_ == r.history_);
+      return (iter_ == r.iter_) ||
+             (index_ == r.index_);
+    }
+    bool operator!=(const_cache_iterator r)
+    {
+      return !(*this == r);
+    }
+  private:
+    friend class PlayerHistory;
+
+    const_cache_iterator(PlayerHistory* history, std::list<Media>::iterator iter, int index)
+      : history_(history),
+        iter_(iter),
+        index_(index)
+    {}
+
+    PlayerHistory* history_;
+    std::list<Media>::iterator iter_;
+    int                         index_;
+  };
+
+  typedef std::list<Media>::const_reverse_iterator const_played_iterator;
+  typedef std::list<Media>::const_iterator const_queue_iterator;
+  typedef const_cache_iterator const_history_iterator;
+  const_queue_iterator queue_begin()const{return current_;}
+  const_queue_iterator queue_end()const{return queue_end_;}
+  const_cache_iterator next_begin(){return const_cache_iterator(this,queue_end_,0);}
+  const_cache_iterator next_end(size_t cache_size){return const_cache_iterator(this,cache_.end(),cache_size);}
+  const_played_iterator played_begin()const{return const_played_iterator(current_);}
+  const_played_iterator played_end()const
+  {return const_played_iterator(cache_.begin());}//Note: this removes access to the first element, which is always NULL
+
+  const_history_iterator begin(size_t max_old_cache)
+  {
+    const_history_iterator i(this,current_,0);
+    while(i->valid() && max_old_cache > 0)
+    {
+      --i;
+      --max_old_cache;
+    }
+    if (!i->valid())
+      ++i;
+    return i;
+  }
+  const_history_iterator end(size_t cache_size)
+  {
+    return const_history_iterator(this,cache_.end(),cache_size + std::distance(current_,queue_end_));
+  }
+
+  void PlayFile(const Media& entry);
+  void SetNextCallback(boost::function<Media ()> callback);
   void InvalidateCache();
   void SetPlayer(Player* player);
 
-  void InsertToQueue(uint queue_index, Entry* entry);
+  void InsertToQueue(uint queue_index, const Media& entry);
   void RemoveFromQueue(uint queue_index);
 
   // Used by the player to request the next item, but will call CurrentSourceChanged
   // back sometime after requesting to indicate when it has in fact switched over
-  Entry* PlayerNext();
+  Media PlayerNext();
 
 public Q_SLOTS:
-  Entry* Next(){return Next(true);}
-  Entry* Next(bool force_play);
-  Entry* Previous(){return Previous(false);}
-  Entry* Previous(bool force_play);
+  Media Next(){return Next(true);}
+  Media Next(bool force_play);
+  Media Previous(){return Previous(false);}
+  Media Previous(bool force_play);
 
   void   CurrentSourceChanged();
 
 Q_SIGNALS:
-  void OnPlayFile(Entry* entry, bool play_file);
-  void OnCacheUpdate();
-  void OnQueueUpdate();
+  void OnPlayFile(const Media& entry, bool play_file);
+  void OnHistoryUpdated();
 private:
-  void   Init();
-  Entry* CurrentUpdated(bool force_play);
-  typedef std::list<Entry*> cache_t;
-  cache_t           cache_;
-  cache_t::iterator current_;
-  cache_t::iterator queue_end_;
-  bool              next_enqueued_;
-  bool              current_played_;
-  boost::function<Entry* ()> get_next_;
+  friend class const_cache_iterator;
+  typedef std::list<Media> cache_t;
+  void                Init();
+  cache_t::iterator   GetNext(cache_t::iterator ii);
+  Media               UpdateCurrent(cache_t::iterator new_current, bool send_play, bool force_play);
+
+  cache_t             cache_;
+  cache_t::iterator   current_;
+  cache_t::iterator   queue_end_;
+  bool                next_enqueued_;
+  bool                current_played_;
+  boost::function<Media ()> get_next_;
 };
 
 //-----------------------------------------------------------------------------

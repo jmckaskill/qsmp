@@ -47,6 +47,7 @@ QSMP_END
 #include <boost/iterator/filter_iterator.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/iterator/iterator_concepts.hpp>
+#include <boost/random.hpp>
 //#include <boost/spirit/home/phoenix/core.hpp>
 //#include <boost/spirit/home/phoenix/function.hpp>
 //#include <boost/spirit/home/phoenix/bind.hpp>

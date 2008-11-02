@@ -29,16 +29,18 @@ template<class MediaEntry>
 MediaOrdering<MediaEntry> mediaOrdering(MetadataType type, SortingOrder order)
 {return MediaOrdering<MediaEntry>(type,order);}
 
-class Entry
+class Metadata
 {
 public:
-  Entry(const directory_entry& dir)
-    : path_(dir.path())
+  Metadata(const directory_entry& dir)
+    : path_(dir.path()),
+      queue_index_(-1)
   {
     init();
   }
-  Entry(const Path& path)
-    : path_(path)
+  Metadata(const Path& path)
+    : path_(path),
+      queue_index_(-1)
   {
     init();
   }
@@ -57,26 +59,49 @@ public:
   }
   std::string artist_;
   Path path_;
-  uint queue_index_;
-  int  history_index_;
+  int  queue_index_;
 };
+
+class Media
+{
+public:
+  Media()
+  {}
+
+  Media(const Path& path)
+    : metadata_(new Metadata(path))
+  {}
+  Media(const directory_entry& path)
+    : metadata_(new Metadata(path))
+  {}
+
+  bool  valid()const{return metadata_.get() != NULL;}
+  const std::string& artist()const{return metadata_->artist_;}
+  const Path&        path()const{return metadata_->path_;}
+  uint               queue_index()const{return metadata_->queue_index_;}
+  void               set_queue_index(uint index){metadata_->queue_index_ = index;}
+  bool               current()const{return metadata_->queue_index_ == 0;}
+private:
+  shared_ptr<Metadata> metadata_;
+};
+
 template<>
-struct MediaOrdering<Entry> 
-  : std::binary_function<const Entry&, const Entry&, bool>
+struct MediaOrdering<Media> 
+  : std::binary_function<const Media&, const Media&, bool>
 {
   MediaOrdering(MetadataType type, SortingOrder order)
     : type_(type),order_(order)
   {}
 
-  bool operator()(const Entry& l, const Entry& r)const
+  bool operator()(const Media& l, const Media& r)const
   {
     switch (type_)
     {
     case MetadataType_FileName:
-      return (order_ == SortingOrder_Ascending) ? (l.path_ < r.path_) : (r.path_ < l.path_);
+      return (order_ == SortingOrder_Ascending) ? (l.path() < r.path()) : (r.path() < l.path());
       break;
     case MetadataType_Artist:
-      return (order_ == SortingOrder_Ascending) ? (l.artist_ < r.artist_) : (r.artist_ < l.artist_);
+      return (order_ == SortingOrder_Ascending) ? (l.artist() < r.artist()) : (r.artist() < l.artist());
       break;
     default:
       return false;
@@ -92,7 +117,7 @@ struct TestExtension
   TestExtension(const Pred& pred)
     : pred_(pred)
   {}
-  bool operator()(const Entry& entry)const
+  bool operator()(const Media& entry)const
   {
     return pred_(entry.path_.extension());
   }
@@ -202,13 +227,30 @@ void sort(T range, MetadataType type, SortingOrder order)
 }
 
 template<class T>
-typename boost::range_value<T>::type* chooseRandom(T range)
+typename boost::range_reference<T>::type chooseRandom(T range)
 {
   BOOST_CONCEPT_ASSERT((RandomAccessRangeConcept<T>));
   BOOST_CONCEPT_ASSERT((ReadableIteratorConcept<typename range_iterator<T>::type>));
   int r = rand();
-  return &*(boost::begin(range) + (r % boost::size(range)));
+  return *(boost::begin(range) + (r % boost::size(range)));
 }
+
+template<class T>
+struct construct
+{
+  typedef T result_type;
+
+  T operator()()const
+  {return T();}
+
+  template<class T1>
+  T operator()(const T1& a1)const
+  {return T(a1);}
+
+  template<class T1,class T2>
+  T operator()(const T1& a1, const T2& a2)const
+  {return T(a1,a2);}
+};
 
 QSMP_END
 

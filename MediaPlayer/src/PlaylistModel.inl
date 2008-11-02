@@ -2,30 +2,36 @@
 #include "PlaylistModel.h"
 
 QSMP_BEGIN
-template<class RandomAccessRange>
-PlaylistModel<RandomAccessRange>::PlaylistModel(RandomAccessRange path_range)
-: paths_ascending_(begin(path_range),end(path_range)),
-paths_descending_(begin(path_range),end(path_range)),
-paths_(&paths_ascending_)
+template<class RangeFunction>
+PlaylistModel<RangeFunction>::PlaylistModel(RangeFunction get_entries)
+: get_entries_(get_entries),
+  entries_(get_entries())
 {
-  qsmp::sort(paths_range_t(paths_ascending_),MetadataType_FileName,SortingOrder_Ascending);
-  qsmp::sort(paths_range_t(paths_descending_),MetadataType_FileName,SortingOrder_Descending);
-
 }
-template<class RandomAccessRange>
-QVariant PlaylistModel<RandomAccessRange>::data(const QModelIndex &index, int role /* = Qt::DisplayRole */)const 
+template<class RangeFunction>
+QVariant PlaylistModel<RangeFunction>::data(const QModelIndex &index, int role /* = Qt::DisplayRole */)const 
 {
   QVariant ret;
   if (role == Qt::DisplayRole &&
-    index.row() < (int)boost::size(*paths_))
+      index.row() < boost::distance(entries_))
   {
+    boost::range_iterator<Range>::type ii = boost::begin(entries_);
+    std::advance(ii, index.row());
+
     switch(index.column())
     {
     case 0:
-      ret = QString::fromStdString((boost::begin(*paths_) + index.row())->path_.file_string());
+      {
+        int queue_index = ii->queue_index();
+        if (queue_index >= 0)
+          ret = QString::number(queue_index);
+      }
       break;
     case 1:
-      ret = QString::fromStdString((boost::begin(*paths_) + index.row())->artist_);
+      ret = QString::fromStdString(ii->path().file_string());
+      break;
+    case 2:
+      ret = QString::fromStdString(ii->artist());
       break;
     default:
       break;
@@ -34,12 +40,12 @@ QVariant PlaylistModel<RandomAccessRange>::data(const QModelIndex &index, int ro
   return ret;
 }
 
-template<class RandomAccessRange>
-int PlaylistModel<RandomAccessRange>::rowCount(const QModelIndex& parent /* = QModelIndex */)const 
+template<class RangeFunction>
+int PlaylistModel<RangeFunction>::rowCount(const QModelIndex& parent /* = QModelIndex */)const 
 {
   if (parent == QModelIndex())
   {
-    return boost::size(*paths_);
+    return boost::distance(entries_);
   }
   else
   {
@@ -47,12 +53,12 @@ int PlaylistModel<RandomAccessRange>::rowCount(const QModelIndex& parent /* = QM
   }
 }
 
-template<class RandomAccessRange>
-int PlaylistModel<RandomAccessRange>::columnCount(const QModelIndex& parent /* = QModelIndex */)const 
+template<class RangeFunction>
+int PlaylistModel<RangeFunction>::columnCount(const QModelIndex& parent /* = QModelIndex */)const 
 {
   if (parent == QModelIndex())
   {
-    return 2;
+    return 3;
   }
   else
   {
@@ -60,19 +66,19 @@ int PlaylistModel<RandomAccessRange>::columnCount(const QModelIndex& parent /* =
   }
 }
 
-template<class RandomAccessRange>
-void PlaylistModel<RandomAccessRange>::onDoubleClicked(const QModelIndex &index)
+template<class RangeFunction>
+void PlaylistModel<RangeFunction>::onDoubleClicked(const QModelIndex &index)
 {
-  itemSelected(QString::fromStdString((boost::begin(*paths_) + index.row())->path_.file_string()));
+ // itemSelected(QString::fromStdString((boost::begin(*paths_) + index.row())->path_.file_string()));
 }
 
-template<class RandomAccessRange>
-void PlaylistModel<RandomAccessRange>::sort(int column, Qt::SortOrder order /* = Qt::AscendingOrder */)
+template<class RangeFunction>
+void PlaylistModel<RangeFunction>::sort(int column, Qt::SortOrder order /* = Qt::AscendingOrder */)
 {
   switch (column)
   {
   case 0:
-    paths_ = (order == Qt::AscendingOrder) ? &paths_ascending_ : &paths_descending_;
+    //paths_ = (order == Qt::AscendingOrder) ? &paths_ascending_ : &paths_descending_;
     //smp::sort(paths_,MetadataType_FileName,sortingOrder(order));
     break;
   case 1:
