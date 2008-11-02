@@ -51,7 +51,7 @@ private:
 	Phonon::MediaObject        media_;
 	Phonon::AudioOutput        audio_;
 	Phonon::Path               audio_path_;
-  bool                       loaded_file_;
+  bool                       file_active_;
 };
 
 //-----------------------------------------------------------------------------
@@ -167,12 +167,12 @@ public:
   Media PlayerNext();
 
 public Q_SLOTS:
-  Media Next(){return Next(true);}
+  Media Next(){return Next(false);}
   Media Next(bool force_play);
   Media Previous(){return Previous(false);}
   Media Previous(bool force_play);
 
-  void   CurrentSourceChanged();
+  void   Status(PlayerState state);
 
 Q_SIGNALS:
   void OnPlayFile(const Media& entry, bool play_file);

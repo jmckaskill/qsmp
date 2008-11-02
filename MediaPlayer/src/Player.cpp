@@ -9,8 +9,8 @@ QSMP_BEGIN
 
 Player::Player(boost::function<Media ()> get_next)
 : get_next_(get_next),
-  audio_(Phonon::MusicCategory),
-  loaded_file_(false)
+audio_(Phonon::MusicCategory),
+file_active_(false)
 {
   audio_path_ = Phonon::createPath(&media_,&audio_);
   connect(&media_, SIGNAL(aboutToFinish()), this, SLOT(EnqueueNext()));
@@ -25,14 +25,16 @@ void Player::PlayFile(const Media& entry, bool play_file)
   media_.clearQueue();
   if (entry.valid())
   {
-    media_.setCurrentSource(QString::fromStdString(entry.path().file_string()));
-    if (play_file || loaded_file_)
+    if (play_file || file_active_)
+    {
+      media_.setCurrentSource(QString::fromStdString(entry.path().file_string()));
       media_.play();
-    loaded_file_ = true;
+      file_active_ = true;
+    }
   }
   else
   {
-    loaded_file_ = false;
+    file_active_ = false;
     media_.stop();
   }
 }
@@ -41,7 +43,7 @@ void Player::PlayFile(const Media& entry, bool play_file)
 
 void Player::Play()
 {
-  if (!loaded_file_)
+  if (!file_active_)
   {
     if (!get_next_.empty())
       PlayFile(get_next_());
@@ -56,7 +58,7 @@ void Player::Play()
 
 void Player::Pause()
 {
-  if (loaded_file_)
+  if (file_active_)
     media_.pause();
 }
 
@@ -64,7 +66,7 @@ void Player::Pause()
 
 void Player::PlayPause()
 {
-  if (!loaded_file_)
+  if (!file_active_)
   {
     Play();
   }
@@ -72,15 +74,15 @@ void Player::PlayPause()
   {
     switch (status())
     {
-      case Phonon::PlayingState:
-        media_.pause();
-        break;
-      case Phonon::PausedState:
-      case Phonon::StoppedState:
-        media_.play();
-        break;
-      default:
-        break;
+    case Phonon::PlayingState:
+      media_.pause();
+      break;
+    case Phonon::PausedState:
+    case Phonon::StoppedState:
+      media_.play();
+      break;
+    default:
+      break;
     }
   }
 }
@@ -89,8 +91,11 @@ void Player::PlayPause()
 
 void Player::Stop()
 {
-  if (loaded_file_)
+  if (file_active_)
+  {
+    file_active_ = false;
     media_.stop();
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -115,6 +120,9 @@ void Player::StatusChanged(Phonon::State newState, Phonon::State oldState)
   case Phonon::StoppedState:
     OnStatus(PlayerState_Stopped);
     break;
+  case Phonon::LoadingState:
+  case Phonon::BufferingState:
+    break;//ignore intermediatary loading states for now
   default:
     OnStatus(PlayerState_Invalid);
     break;
@@ -135,7 +143,7 @@ void Player::EnqueueNext()
 
 PlayerHistory::PlayerHistory()
 : next_enqueued_(false),
-  current_played_(false)
+current_played_(false)
 {
   Init();
 }
@@ -144,7 +152,7 @@ PlayerHistory::PlayerHistory()
 
 PlayerHistory::PlayerHistory(Player* player)
 : next_enqueued_(false),
-  current_played_(false)
+current_played_(false)
 {
   Init();
   SetPlayer(player);
@@ -167,7 +175,7 @@ void PlayerHistory::Init()
 void PlayerHistory::SetPlayer(Player* player)
 {
   connect(this, SIGNAL(OnPlayFile(Media,bool)), player, SLOT(PlayFile(Media,bool)));
-  connect(player, SIGNAL(OnSourceChanged()), this, SLOT(CurrentSourceChanged()));
+  connect(player, SIGNAL(OnStatus(PlayerState)), this, SLOT(Status(PlayerState)));
   UpdateCurrent(current_,true,false);//force through the current item to the player
 }
 
@@ -197,11 +205,11 @@ void PlayerHistory::InvalidateCache()
 {
   cache_t::iterator cache_begin = queue_end_;
   if (cache_begin == cache_.begin() ||
-       ( current_ == queue_end_ && 
-         current_played_ && 
-         cache_begin != cache_.end()
-       )
-     )
+    ( current_ == queue_end_ && 
+    current_played_ && 
+    cache_begin != cache_.end()
+    )
+    )
   {
     ++cache_begin;
   }
@@ -218,19 +226,6 @@ void PlayerHistory::InvalidateCache()
     UpdateCurrent(cache_.end(),true,false);
   }
   OnHistoryUpdated();
-}
-
-//-----------------------------------------------------------------------------
-
-void PlayerHistory::CurrentSourceChanged()
-{
-  if (next_enqueued_)
-  {
-    next_enqueued_ = false;
-
-    UpdateCurrent(GetNext(current_),false,false);
-  }
-  current_played_ = true;
 }
 
 //-----------------------------------------------------------------------------
@@ -312,10 +307,38 @@ PlayerHistory::cache_t::iterator PlayerHistory::GetNext(cache_t::iterator ii)
 
 //-----------------------------------------------------------------------------
 
+void PlayerHistory::Status(PlayerState state)
+{
+  switch(state)
+  {
+  case PlayerState_Stopped:
+    {
+      current_played_ = false;
+    }
+    break;
+  case PlayerState_Playing:
+    {
+      if (next_enqueued_)
+      {
+        next_enqueued_ = false;
+
+        UpdateCurrent(GetNext(current_),false,false);
+      }
+      current_played_ = true;
+    }
+    break;
+  default:
+    break;
+  }
+}
+
+//-----------------------------------------------------------------------------
+
 Media PlayerHistory::PlayerNext()
 {
-  next_enqueued_ = true;
-  cache_t::iterator i = GetNext(current_);
+  bool inc_current = (current_played_ || (current_ == cache_.end()) || !current_->valid());
+  next_enqueued_ = inc_current;
+  cache_t::iterator i = inc_current ? GetNext(current_) : current_;
   return (i != cache_.end()) ? *i : Media();
 }
 
