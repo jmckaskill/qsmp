@@ -176,6 +176,7 @@ void PlayerHistory::SetPlayer(Player* player)
 {
   connect(this, SIGNAL(OnPlayFile(Media,bool)), player, SLOT(PlayFile(Media,bool)));
   connect(player, SIGNAL(OnStatus(PlayerState)), this, SLOT(Status(PlayerState)));
+  connect(player, SIGNAL(OnSourceChanged()), this, SLOT(SourceChanged()));
   UpdateCurrent(current_,true,false);//force through the current item to the player
 }
 
@@ -307,6 +308,19 @@ PlayerHistory::cache_t::iterator PlayerHistory::GetNext(cache_t::iterator ii)
 
 //-----------------------------------------------------------------------------
 
+void PlayerHistory::SourceChanged()
+{
+  if (next_enqueued_)
+  {
+    next_enqueued_ = false;
+
+    UpdateCurrent(GetNext(current_),false,false);
+  }
+  current_played_ = true;
+}
+
+//-----------------------------------------------------------------------------
+
 void PlayerHistory::Status(PlayerState state)
 {
   switch(state)
@@ -314,17 +328,6 @@ void PlayerHistory::Status(PlayerState state)
   case PlayerState_Stopped:
     {
       current_played_ = false;
-    }
-    break;
-  case PlayerState_Playing:
-    {
-      if (next_enqueued_)
-      {
-        next_enqueued_ = false;
-
-        UpdateCurrent(GetNext(current_),false,false);
-      }
-      current_played_ = true;
     }
     break;
   default:

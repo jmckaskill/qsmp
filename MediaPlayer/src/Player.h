@@ -173,6 +173,7 @@ public Q_SLOTS:
   Media Previous(bool force_play);
 
   void   Status(PlayerState state);
+  void   SourceChanged();
 
 Q_SIGNALS:
   void OnPlayFile(const Media& entry, bool play_file);
