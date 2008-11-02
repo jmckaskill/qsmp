@@ -75,36 +75,41 @@ PlayerControl::PlayerControl(Player *player, PlayerHistory *history)
   stop_(new QPushButton(tr("Stop"))),
   volume_(new Phonon::VolumeSlider(player->audio()))
 {
-  QHBoxLayout* layout = new QHBoxLayout;
-  setLayout(layout);
+  QVBoxLayout* vLayout = new QVBoxLayout;
+  setLayout(vLayout);
 
-  layout->addWidget(stop_);
-  layout->addWidget(previous_);
-  layout->addWidget(play_pause_);
-  layout->addWidget(next_);
-  layout->addWidget(progress_);
-  layout->addWidget(progress_text_);
-  layout->addWidget(volume_);
+  QHBoxLayout* hLayout1 = new QHBoxLayout;
+  hLayout1->addWidget(previous_);
+  hLayout1->addWidget(stop_);
+  hLayout1->addWidget(play_pause_);
+  hLayout1->addWidget(next_);
+  hLayout1->addWidget(volume_);
+
+  QHBoxLayout* hLayout2 = new QHBoxLayout;
+  hLayout2->addWidget(progress_);
+  hLayout2->addWidget(progress_text_);
+
+  vLayout->addLayout(hLayout1);
+  vLayout->addLayout(hLayout2);
 
   connect(next_, SIGNAL(clicked()), history, SLOT(Next()));
   connect(previous_, SIGNAL(clicked()), history, SLOT(Previous()));
-  Status(player->status());
-  connect(player, SIGNAL(OnStatus(Phonon::State)), this, SLOT(Status(Phonon::State)));
+  connect(play_pause_, SIGNAL(clicked()), player, SLOT(PlayPause()));
+  connect(stop_, SIGNAL(clicked()), player, SLOT(Stop()));
+  connect(player, SIGNAL(OnStatus(PlayerState)), this, SLOT(Status(PlayerState)));
+
+  Status(PlayerState_Invalid);
 }
 
 //-----------------------------------------------------------------------------
 
-void PlayerControl::Status(Phonon::State state)
+void PlayerControl::Status(PlayerState state)
 {
   switch(state)
   {
-  case Phonon::PlayingState:
+  case PlayerState_Playing:
     play_pause_->setText(tr("Pause"));
     break;
-  case Phonon::PausedState:
-    play_pause_->setText(tr("Play"));
-    break;
-  case Phonon::StoppedState:
   default:
     play_pause_->setText(tr("Play"));
     break;

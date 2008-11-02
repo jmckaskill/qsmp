@@ -7,6 +7,14 @@
 QSMP_BEGIN
 
 
+enum PlayerState
+{
+  PlayerState_Playing,
+  PlayerState_Paused,
+  PlayerState_Stopped,
+  PlayerState_Invalid
+};
+
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -25,13 +33,15 @@ public Q_SLOTS:
   void PlayFile(const Media& entry, bool play_file = true);
   void Play();
   void Pause();
+  void PlayPause();
   void Stop();
   //Volume is from 0-1000
   void SetVolume(int volume);
+  void StatusChanged(Phonon::State, Phonon::State);
 
 Q_SIGNALS:
   void OnProgress(QTime progress, QTime total);
-  void OnStatus(Phonon::State state);
+  void OnStatus(PlayerState state);
   void OnSourceChanged();
 
 private Q_SLOTS:

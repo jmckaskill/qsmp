@@ -46,7 +46,7 @@ public:
   }
   void init()
   {
-#if 1
+#if 0
     ID3_Tag tag(path_.file_string().c_str());
     ID3_Frame* frame = tag.Find(ID3FID_LEADARTIST);
     if (frame)

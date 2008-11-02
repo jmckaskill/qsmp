@@ -2,11 +2,9 @@
 #define QSMP_PLAYLISTVIEW_H_
 
 #include "common.h"
+#include "Player.h"
 
 QSMP_BEGIN
-
-class Player;
-class PlayerHistory;
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -36,7 +34,7 @@ public:
 
 public Q_SLOTS:
   void Progress(QTime progress, QTime total);
-  void Status(Phonon::State state);
+  void Status(PlayerState state);
 
 private:
   Player*       player_;

@@ -15,6 +15,7 @@ Player::Player(boost::function<Media ()> get_next)
   audio_path_ = Phonon::createPath(&media_,&audio_);
   connect(&media_, SIGNAL(aboutToFinish()), this, SLOT(EnqueueNext()));
   connect(&media_, SIGNAL(currentSourceChanged(const Phonon::MediaSource &)), this, SIGNAL(OnSourceChanged()));
+  connect(&media_, SIGNAL(stateChanged(Phonon::State, Phonon::State)), this, SLOT(StatusChanged(Phonon::State, Phonon::State)));
 }
 
 //-----------------------------------------------------------------------------
@@ -55,15 +56,40 @@ void Player::Play()
 
 void Player::Pause()
 {
-  if (!loaded_file_)
+  if (loaded_file_)
     media_.pause();
+}
+
+//-----------------------------------------------------------------------------
+
+void Player::PlayPause()
+{
+  if (!loaded_file_)
+  {
+    Play();
+  }
+  else
+  {
+    switch (status())
+    {
+      case Phonon::PlayingState:
+        media_.pause();
+        break;
+      case Phonon::PausedState:
+      case Phonon::StoppedState:
+        media_.play();
+        break;
+      default:
+        break;
+    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 
 void Player::Stop()
 {
-  if (!loaded_file_)
+  if (loaded_file_)
     media_.stop();
 }
 
@@ -72,6 +98,27 @@ void Player::Stop()
 void Player::SetVolume(int volume)
 {
   audio_.setVolume(double(volume) / 1000.0);
+}
+
+//-----------------------------------------------------------------------------
+
+void Player::StatusChanged(Phonon::State newState, Phonon::State oldState)
+{
+  switch (newState)
+  {
+  case Phonon::PlayingState:
+    OnStatus(PlayerState_Playing);
+    break;
+  case Phonon::PausedState:
+    OnStatus(PlayerState_Paused);
+    break;
+  case Phonon::StoppedState:
+    OnStatus(PlayerState_Stopped);
+    break;
+  default:
+    OnStatus(PlayerState_Invalid);
+    break;
+  }
 }
 
 //-----------------------------------------------------------------------------
