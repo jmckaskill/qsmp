@@ -1,7 +1,7 @@
 #ifndef QSMP_LUATCPCONSOLE
 #define QSMP_LUATCPCONSOLE
 
-#include "common.h"
+#include "qsmp/common.h"
 
 QSMP_BEGIN
 

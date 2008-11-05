@@ -20,7 +20,8 @@ include_directories(${Boost_INCLUDE_DIR}
 		    ${id3lib_INCLUDE_DIR}
 		    ${lua_INCLUDE_DIR}
 		    ${TBB_INCLUDE_DIR}
-		    ${TCL_INCLUDE_DIR})
+		    ${TCL_INCLUDE_DIR}
+		    include)
 
 add_definitions(-DID3LIB_LINKOPTION=1
                 -DQT_NO_KEYWORDS)
@@ -30,20 +31,20 @@ set(QT_USE_QTNETWORK 1)
 find_package(Qt4)
 include(${QT_USE_FILE})
 
-set(moc_headers src/LuaTcpConsole.h
-                src/PlaylistModel.h
-                src/Player.h
-                src/PlaylistView.h
-                src/HotkeyWindow.h)
+set(moc_headers include/qsmp/LuaTcpConsole.h
+                include/qsmp/PlaylistModel.h
+                include/qsmp/Player.h
+                include/qsmp/PlaylistView.h
+		include/qsmp/HotkeyWindow.h)
 set(ui ui/untitled.ui)
-set(headers src/common.h
-            src/utilities.h
-            src/Playlist.h
-	    src/PlaylistManager.h
-	    src/LuaRegister.h)
+set(headers include/qsmp/common.h
+            include/qsmp/utilities.h
+            include/qsmp/Playlist.h
+	    include/qsmp/PlaylistManager.h
+            include/qsmp/PlaylistModel.inl
+	    include/qsmp/LuaRegister.h)
 set(sources src/main.cpp
             src/LuaTcpConsole.cpp
-            src/PlaylistModel.inl
             src/LuaRegister.cpp
             src/Player.cpp
             src/PlaylistView.cpp

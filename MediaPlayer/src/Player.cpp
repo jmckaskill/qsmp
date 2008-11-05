@@ -1,5 +1,5 @@
-#include "Player.h"
-#include "utilities.h"
+#include "qsmp/Player.h"
+#include "qsmp/utilities.h"
 
 QSMP_BEGIN
 

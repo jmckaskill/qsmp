@@ -1,8 +1,8 @@
 #ifndef QSMP_PLAYLISTVIEW_H_
 #define QSMP_PLAYLISTVIEW_H_
 
-#include "common.h"
-#include "Player.h"
+#include "qsmp/common.h"
+#include "qsmp/Player.h"
 
 QSMP_BEGIN
 

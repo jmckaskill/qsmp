@@ -1,12 +1,11 @@
-#include "common.h"
+#include "qsmp/common.h"
 #include <iostream>
-#include "LuaTcpConsole.h"
-#include "PlaylistModel.h"
-#include "PlaylistModel.inl"
-#include "Player.h"
-#include "PlaylistView.h"
-#include "utilities.h"
-#include "HotkeyWindow.h"
+#include "qsmp/LuaTcpConsole.h"
+#include "qsmp/PlaylistModel.h"
+#include "qsmp/Player.h"
+#include "qsmp/PlaylistView.h"
+#include "qsmp/utilities.h"
+#include "qsmp/HotkeyWindow.h"
 
 
 int main(int argc, char **argv)

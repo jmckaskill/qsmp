@@ -1,5 +1,5 @@
-#include "LuaTcpConsole.h"
-#include "LuaRegister.h"
+#include "qsmp/LuaTcpConsole.h"
+#include "qsmp/LuaRegister.h"
 
 QSMP_BEGIN
 

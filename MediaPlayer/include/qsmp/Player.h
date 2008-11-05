@@ -1,8 +1,8 @@
 #ifndef QSMP_PLAYER_H_
 #define QSMP_PLAYER_H_
 
-#include "common.h"
-#include "utilities.h"
+#include "qsmp/common.h"
+#include "qsmp/utilities.h"
 
 QSMP_BEGIN
 

@@ -1,6 +1,6 @@
-#ifndef QSMP_PLAYLISTMODEL
-#define QSMP_PLAYLISTMODEL
-#include "common.h"
+#ifndef QSMP_PLAYLISTMODEL_H_
+#define QSMP_PLAYLISTMODEL_H_
+#include "qsmp/common.h"
 
 QSMP_BEGIN
 
@@ -42,5 +42,6 @@ shared_ptr<PlaylistModel<RangeFunction> > NewPlaylist(RangeFunction function)
 
 QSMP_END
 
+#include "PlaylistModel.inl"
 
 #endif

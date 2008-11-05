@@ -1,5 +1,5 @@
-#include "common.h"
-#include "PlaylistModel.h"
+#ifndef QSMP_PLAYLISTMODEL_INL_
+#define QSMP_PLAYLISTMODEL_INL_
 
 QSMP_BEGIN
 template<class RangeFunction>
@@ -91,3 +91,5 @@ void PlaylistModel<RangeFunction>::sort(int column, Qt::SortOrder order /* = Qt:
 }
 
 QSMP_END
+
+#endif

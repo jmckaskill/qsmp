@@ -1,6 +1,6 @@
-#include "PlaylistView.h"
+#include "qsmp/PlaylistView.h"
 
-#include "Player.h"
+#include "qsmp/Player.h"
 
 QSMP_BEGIN
 

@@ -1,4 +1,4 @@
-#include "HotkeyWindow.h"
+#include "qsmp/HotkeyWindow.h"
 
 #include "MMShellHook.h"
 

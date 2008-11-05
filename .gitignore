@@ -1,1 +1,8 @@
 build*
+*.ncb
+*.user
+*.suo
+*.old
+*.wwdb
+Debug
+id3lib/config.h

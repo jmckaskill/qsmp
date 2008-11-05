@@ -1,7 +1,7 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
-#include "common.h"
+#include "qsmp/common.h"
 
 
 QSMP_BEGIN

@@ -1,7 +1,7 @@
- #ifndef QSMP_HOTKEYWINDOW_H_
+#ifndef QSMP_HOTKEYWINDOW_H_
 #define QSMP_HOTKEYWINDOW_H_
 
-#include "common.h"
+#include "qsmp/common.h"
 
 QSMP_BEGIN
 
