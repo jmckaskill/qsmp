@@ -20,7 +20,7 @@ include_directories(${Boost_INCLUDE_DIR}
 		    ${id3lib_INCLUDE_DIR}
 		    ${lua_INCLUDE_DIR}
 		    ${TBB_INCLUDE_DIR}
-		    ${boost_singleton_INCLUDE_DIR})
+		    ${TCL_INCLUDE_DIR})
 
 add_definitions(-DID3LIB_LINKOPTION=1
                 -DQT_NO_KEYWORDS)
