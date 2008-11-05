@@ -6,6 +6,7 @@
 #include "Player.h"
 #include "PlaylistView.h"
 #include "utilities.h"
+#include "HotkeyWindow.h"
 
 
 int main(int argc, char **argv)
@@ -58,9 +59,16 @@ int main(int argc, char **argv)
     layout->addWidget(new PlaylistView(model.get()));
     layout->addWidget(new PlayerControl(&player,&history));
 
-    QWidget window;
+    HotkeyWindow window;
     window.setLayout(layout);
     window.show();
+
+    window.RegisterHotkeys();
+
+    QObject::connect(&window, SIGNAL(OnPrevious()), &history, SLOT(Previous()));
+    QObject::connect(&window, SIGNAL(OnNext()), &history, SLOT(Next()));
+    QObject::connect(&window, SIGNAL(OnPlayPause()), &player, SLOT(PlayPause()));
+    QObject::connect(&window, SIGNAL(OnStop()), &player, SLOT(Stop()));
 
     //QObject::connect(view,SIGNAL(doubleClicked(QModelIndex)),model,SLOT(onDoubleClicked(QModelIndex)));
     //QObject::connect(model,SIGNAL(itemSelected(QString)),mywindow.control,SLOT(setFilePath(QString)));

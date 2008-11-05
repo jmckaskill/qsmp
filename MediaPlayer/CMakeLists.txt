@@ -33,7 +33,8 @@ include(${QT_USE_FILE})
 set(moc_headers src/LuaTcpConsole.h
                 src/PlaylistModel.h
                 src/Player.h
-                src/PlaylistView.h)
+                src/PlaylistView.h
+                src/HotkeyWindow.h)
 set(ui ui/untitled.ui)
 set(headers src/common.h
             src/utilities.h
@@ -45,7 +46,8 @@ set(sources src/main.cpp
             src/PlaylistModel.inl
             src/LuaRegister.cpp
             src/Player.cpp
-            src/PlaylistView.cpp)
+            src/PlaylistView.cpp
+            src/HotkeyWindow.cpp)
 
 qt4_wrap_cpp(moc_sources ${moc_headers})
 qt4_wrap_ui(moc_sources ${ui})
