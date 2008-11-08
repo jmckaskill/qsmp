@@ -3,6 +3,8 @@ if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
 
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
+
 project(SMP)
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/id3lib/libprj 
