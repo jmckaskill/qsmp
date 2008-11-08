@@ -19,6 +19,7 @@ include_directories(${Boost_INCLUDE_DIR}
 		    ${lua_INCLUDE_DIR}
 		    ${TBB_INCLUDE_DIR}
 		    ${TCL_INCLUDE_DIR}
+		    ${boost_singleton_INCLUDE_DIR}
 		    include)
 
 add_definitions(-DID3LIB_LINKOPTION=1
