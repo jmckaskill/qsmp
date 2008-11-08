@@ -6,6 +6,7 @@
 #include "qsmp/PlaylistView.h"
 #include "qsmp/utilities.h"
 #include "qsmp/HotkeyWindow.h"
+#include "qsmp/Log.h"
 
 
 int main(int argc, char **argv)
@@ -13,7 +14,11 @@ int main(int argc, char **argv)
   using namespace qsmp;
   try
   {
-    srand(::GetTickCount());
+    qInstallMsgHandler(&qsmp::QtMsgHandler);
+
+    DWORD tick = ::GetTickCount();
+    LOG("Seed") << tick;
+    srand(tick);
 
     tbb::task_scheduler_init init;
     QApplication app(argc, argv);

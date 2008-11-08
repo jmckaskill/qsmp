@@ -85,6 +85,13 @@ private:
   shared_ptr<Metadata> metadata_;
 };
 
+template<class CharT, class traits>
+std::basic_ostream<CharT,traits>& operator<<(std::basic_ostream<CharT,traits>& stream, const Media& entry)
+{
+  stream << entry.path().file_string();
+  return stream;
+}
+
 template<>
 struct MediaOrdering<Media> 
   : std::binary_function<const Media&, const Media&, bool>
@@ -251,6 +258,7 @@ struct construct
   T operator()(const T1& a1, const T2& a2)const
   {return T(a1,a2);}
 };
+
 
 QSMP_END
 

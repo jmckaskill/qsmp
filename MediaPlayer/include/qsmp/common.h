@@ -3,9 +3,9 @@
 
 #ifdef _WIN32
 
-#ifndef _UNICODE
-#define _UNICODE
-#endif
+//#ifndef _UNICODE
+//#define _UNICODE
+//#endif
 
 #ifndef _WIN32_WINNT		// Allow use of features specific to Windows XP or later.                   
 #define _WIN32_WINNT 0x0501	// Change this to the appropriate value to target other versions of Windows.
@@ -13,6 +13,10 @@
 #ifndef WINVER
 #define WINVER 0x501
 #endif
+
+#define _AFXDLL
+
+#include <afx.h>
 
 #endif
 
@@ -48,10 +52,12 @@ QSMP_END
 #include <boost/tuple/tuple.hpp>
 #include <boost/iterator/iterator_concepts.hpp>
 #include <boost/random.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 //#include <boost/spirit/home/phoenix/core.hpp>
 //#include <boost/spirit/home/phoenix/function.hpp>
 //#include <boost/spirit/home/phoenix/bind.hpp>
-//#include <boost/utility/singleton.hpp>
+#include <boost/utility/singleton.hpp>
 //#define BOOST_SIGNALS_NAMESPACE signalslib;
 //#include <boost/signal.hpp>//this needs to be replaced by thread-safe signals
 
@@ -73,6 +79,8 @@ using boost::array;
 using boost::tuples::tuple;
 using boost::tuples::make_tuple;
 using boost::tuples::tie;
+using boost::mutex;
+using boost::lock_guard;
 //using namespace boost::phoenix::arg_names; //brings in arg1 etc and _1 etc
 //using boost::phoenix::function;
 //using boost::phoenix::bind;
@@ -123,6 +131,12 @@ extern "C"
 #undef QT_END_MOC_NAMESPACE
 #define QT_BEGIN_MOC_NAMESPACE QSMP_BEGIN
 #define QT_END_MOC_NAMESPACE QSMP_END
+
+
+#define QSMP_NON_COPYABLE(class_name) \
+  private:  \
+    class_name(const class_name&);  \
+    class_name& operator=(const class_name&);
 
 
 #endif

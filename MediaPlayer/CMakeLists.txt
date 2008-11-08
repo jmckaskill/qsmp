@@ -2,7 +2,7 @@ project(qsmp)
 
 set(BOOST_ROOT E:/SCM/boost_1_36_0 CACHE FILEPATH "boost root")
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost COMPONENTS filesystem system)
+find_package(Boost COMPONENTS filesystem system thread date_time)
 
 set(TBB_ROOT E:/SCM/tbb-win32 CACHE FILEPATH "tbb root")
 set(TBB_INCLUDE_DIR ${TBB_ROOT}/include)
@@ -42,11 +42,13 @@ set(headers include/qsmp/common.h
             include/qsmp/Playlist.h
 	    include/qsmp/PlaylistManager.h
             include/qsmp/PlaylistModel.inl
-	    include/qsmp/LuaRegister.h)
+	    include/qsmp/LuaRegister.h
+	    include/qsmp/Log.h)
 set(sources src/main.cpp
             src/LuaTcpConsole.cpp
             src/LuaRegister.cpp
             src/Player.cpp
+            src/Log.cpp
             src/PlaylistView.cpp
             src/HotkeyWindow.cpp)
 

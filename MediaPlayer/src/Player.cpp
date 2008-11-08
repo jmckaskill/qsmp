@@ -1,5 +1,6 @@
 #include "qsmp/Player.h"
 #include "qsmp/utilities.h"
+#include "qsmp/Log.h"
 
 QSMP_BEGIN
 
@@ -12,6 +13,7 @@ Player::Player(boost::function<Media ()> get_next)
 audio_(Phonon::MusicCategory),
 file_active_(false)
 {
+  LOG("Player") << "Initialising";
   audio_path_ = Phonon::createPath(&media_,&audio_);
   connect(&media_, SIGNAL(aboutToFinish()), this, SLOT(EnqueueNext()));
   connect(&media_, SIGNAL(currentSourceChanged(const Phonon::MediaSource &)), this, SIGNAL(OnSourceChanged()));
@@ -27,6 +29,7 @@ void Player::PlayFile(const Media& entry, bool play_file)
   {
     if (play_file || file_active_)
     {
+      LOG("Player") << "Play: " << entry;
       media_.setCurrentSource(QString::fromStdString(entry.path().file_string()));
       media_.play();
       file_active_ = true;
@@ -34,8 +37,7 @@ void Player::PlayFile(const Media& entry, bool play_file)
   }
   else
   {
-    file_active_ = false;
-    media_.stop();
+    Stop();
   }
 }
 
@@ -50,6 +52,7 @@ void Player::Play()
   }
   else
   {
+    LOG("Player") << "Play";
     media_.play();
   }
 }
@@ -59,7 +62,10 @@ void Player::Play()
 void Player::Pause()
 {
   if (file_active_)
+  {
+    LOG("Player") << "Pause";
     media_.pause();
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -75,11 +81,11 @@ void Player::PlayPause()
     switch (status())
     {
     case Phonon::PlayingState:
-      media_.pause();
+      Pause();
       break;
     case Phonon::PausedState:
     case Phonon::StoppedState:
-      media_.play();
+      Play();
       break;
     default:
       break;
@@ -93,6 +99,7 @@ void Player::Stop()
 {
   if (file_active_)
   {
+    LOG("Player") << "Stop";
     file_active_ = false;
     media_.stop();
   }
@@ -107,8 +114,40 @@ void Player::SetVolume(int volume)
 
 //-----------------------------------------------------------------------------
 
+namespace
+{
+  template<class CharT, class traits>
+  std::basic_ostream<CharT, traits>& operator<<(std::basic_ostream<CharT,traits>& stream, Phonon::State state)
+  {
+    switch(state)
+    {
+    case Phonon::LoadingState:
+      stream << "Loading";
+      break;
+    case Phonon::StoppedState:
+      stream << "Stopped";
+      break;
+    case Phonon::PlayingState:
+      stream << "Playing";
+      break;
+    case Phonon::BufferingState:
+      stream << "Buffering";
+      break;
+    case Phonon::PausedState:
+      stream << "Paused";
+      break;
+    case Phonon::ErrorState:
+      stream << "Error";
+      break;
+    }
+    return stream;
+  }
+}
+//-----------------------------------------------------------------------------
+
 void Player::StatusChanged(Phonon::State newState, Phonon::State oldState)
 {
+  LOG("Player") << "Status changed: " << oldState << " -> " << newState;
   switch (newState)
   {
   case Phonon::PlayingState:
@@ -134,7 +173,11 @@ void Player::StatusChanged(Phonon::State newState, Phonon::State oldState)
 void Player::EnqueueNext()
 {
   if (!get_next_.empty())
-    media_.enqueue(QString::fromStdString(get_next_().path().file_string()));
+  {
+    std::string next = get_next_().path().file_string();
+    LOG("Player") << "Getting next: " << next;
+    media_.enqueue(QString::fromStdString(next));
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -168,6 +211,7 @@ void PlayerHistory::Init()
   cache_.push_back(Media());
   current_ = cache_.begin();
   queue_end_ = current_;
+  LOG("History") << "Initialising";
 }
 
 //-----------------------------------------------------------------------------
@@ -204,6 +248,7 @@ void PlayerHistory::SetNextCallback(boost::function<Media ()> callback)
 
 void PlayerHistory::InvalidateCache()
 {
+  LOG("History") << "Cache invalidated";
   cache_t::iterator cache_begin = queue_end_;
   if (cache_begin == cache_.begin() ||
     ( current_ == queue_end_ && 
@@ -233,6 +278,7 @@ void PlayerHistory::InvalidateCache()
 
 Media PlayerHistory::Next(bool force_play)
 {
+  LOG("History") << "Next";
   return UpdateCurrent(GetNext(current_),true,force_play);
 }
 
@@ -240,6 +286,7 @@ Media PlayerHistory::Next(bool force_play)
 
 Media PlayerHistory::Previous(bool force_play)
 {
+  LOG("History") << "Previous";
   cache_t::iterator i = current_;
   if (i != cache_.begin())
     --i;
