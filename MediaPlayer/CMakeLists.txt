@@ -1,7 +1,5 @@
 project(qsmp)
 
-#TODO: Boost and TBB have static paths for now ... will change to
-#paths set from ccmake when I get around to it
 set(BOOST_ROOT E:/SCM/boost_1_36_0 CACHE FILEPATH "boost root")
 set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost COMPONENTS filesystem system)
@@ -34,6 +32,7 @@ include(${QT_USE_FILE})
 set(moc_headers include/qsmp/LuaTcpConsole.h
                 include/qsmp/PlaylistModel.h
                 include/qsmp/Player.h
+                include/qsmp/ViewSelector.h
                 include/qsmp/PlaylistView.h
 		include/qsmp/HotkeyWindow.h)
 set(ui ui/untitled.ui)
