@@ -35,7 +35,7 @@ namespace tcl
   template<typename tree_type, typename node_order_compare_type>
   struct deref_ordered_compare
   {
-    bool operator() (const tree_type* lhs, const tree_type* rhs) const { return node_order_compare_type() (*lhs->get(), *rhs->get());}
+    bool operator() (const tree_type* lhs, const tree_type* rhs) const { return node_order_compare_type() (lhs->get(), rhs->get());}
   };
 
   // forward declaration for deref comparison functor
@@ -49,7 +49,7 @@ namespace tcl
     bool operator () (const unique_tree<stored_type, node_compare_type, node_order_compare_type>* lhs, const unique_tree<stored_type, node_compare_type, node_order_compare_type>* rhs) const
     {
       // call < on actual object
-      return node_compare_type()(*lhs->get(), *rhs->get());
+      return node_compare_type()(lhs->get(), rhs->get());
     }
   };
 }

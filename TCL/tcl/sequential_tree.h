@@ -242,7 +242,7 @@ private:
   {
     bool operator() (const tree_type* lhs, const tree_type* rhs)
     {
-      return *lhs->get() < *rhs->get();
+      return lhs->get() < rhs->get();
     }
   };
 
@@ -253,7 +253,7 @@ private:
     explicit sort_functor_deref(const T& sort_functor_) : sort_functor(sort_functor_) {}
     bool operator() (const tree_type* lhs, const tree_type* rhs) const
     {
-      return sort_functor(*lhs->get(), *rhs->get());
+      return sort_functor(lhs->get(), rhs->get());
     }
     sort_functor_deref& operator = (const sort_functor_deref& rhs) { sort_functor = rhs->sort_functor; return *this;}
     const T& sort_functor;

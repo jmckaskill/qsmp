@@ -89,8 +89,8 @@ public:
 
 public:
   // overloaded operators
-  reference_type operator*() const { return  const_cast<reference_type>(*(*it)->get());}
-  pointer_type operator->() const { return const_cast<pointer_type>((*it)->get());}
+  reference_type operator*() const { return  const_cast<reference_type>((*it)->get());}
+  pointer_type operator->() const { return const_cast<pointer_type>(&(*it)->get());}
 
   associative_iterator& operator ++() { ++it; return *this;}
   associative_iterator operator ++(int) { associative_iterator old(*this); ++*this; return old;}
@@ -99,6 +99,8 @@ public:
 
   // public interface
   tree_pointer_type node() const { return const_cast<tree_pointer_type>(*it);}
+
+  bool valid()const{return pParent != NULL;}
 
   // comparison operators
   bool operator == (const associative_iterator<stored_type, tree_type, const tree_type*, container_type, const stored_type*, const stored_type&>& rhs) const { return associative_it_eq(this, rhs); }
@@ -167,8 +169,8 @@ public:
   #endif
 
   // overloaded operators
-  reference_type operator*() const { return  const_cast<reference_type>(*(*it)->get());}
-  pointer_type operator->() const { return const_cast<pointer_type>((*it)->get());}
+  reference_type operator*() const { return  const_cast<reference_type>((*it)->get());}
+  pointer_type operator->() const { return const_cast<pointer_type>(&(*it)->get());}
 
   sequential_iterator& operator ++() { ++it; return *this;}
   sequential_iterator operator ++(int) { sequential_iterator old(*this); ++*this; return old;}

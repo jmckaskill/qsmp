@@ -90,9 +90,9 @@ tcl::unique_tree<stored_type, node_compare_type, node_order_compare_type>::opera
 template<typename stored_type, typename node_compare_type, typename node_order_compare_type>
 void tcl::unique_tree<stored_type, node_compare_type, node_order_compare_type>::set(const tree_type& tree_obj)
 {
-  if (!check_for_duplicate(*tree_obj.get(), this)) { // duplicate node exist in tree?
+  if (!check_for_duplicate(tree_obj.get(), this)) { // duplicate node exist in tree?
     // no.  OK to set this node
-    basic_tree_type::set(*tree_obj.get());
+    basic_tree_type::set(tree_obj.get());
 
     associative_const_iterator_type it = tree_obj.begin(), it_end = tree_obj.end();
     for (; it != it_end; ++it) { // insert any children
@@ -147,11 +147,11 @@ tcl::unique_tree<stored_type, node_compare_type, node_order_compare_type>::inser
   }
 
   // insert current node
-  associative_iterator_type base_it = insert(*tree_obj.get());
+  associative_iterator_type base_it = insert(tree_obj.get());
 
   if (base_it == associative_tree_type::end()) { // insert successful?
     // no.  but, the node may have existed here previously.  check if so
-    base_it = associative_tree_type::find(*tree_obj.get()); 
+    base_it = associative_tree_type::find(tree_obj.get()); 
   }
 
   if (base_it != associative_tree_type::end()) {  // node exist?
@@ -170,7 +170,7 @@ template<typename stored_type, typename node_compare_type, typename node_order_c
 typename tcl::unique_tree<stored_type, node_compare_type, node_order_compare_type>::child_iterator 
 tcl::unique_tree<stored_type, node_compare_type, node_order_compare_type>::insert( const stored_type& parent_obj, const stored_type& value)
 {
-  if (!(parent_obj < (*basic_tree_type::get())) && !((*basic_tree_type::get()) < parent_obj)) { // is this node the parent? 
+  if (!(parent_obj < (basic_tree_type::get())) && !((basic_tree_type::get()) < parent_obj)) { // is this node the parent? 
     return insert(value);  // yes.  insert the node here.
   }
 
@@ -373,7 +373,7 @@ erase(const stored_type& value)
 
     tree_type* const pNode = it.node();
     pParent->ordered_children.erase(pNode);
-    dynamic_cast<associative_tree_type*>(pParent)->erase(*pNode->get()); // erase node
+    dynamic_cast<associative_tree_type*>(pParent)->erase(pNode->get()); // erase node
 
     return true;
   }
@@ -395,7 +395,7 @@ void tcl::unique_tree<stored_type, node_compare_type, node_order_compare_type>::
   tree_type* pNode = it.node();
   ordered_children.erase(pNode);
 
-  associative_tree_type::erase(*pNode->get()); 
+  associative_tree_type::erase(pNode->get()); 
 }
 
 // erase(iterator, iterator)
@@ -416,7 +416,7 @@ bool tcl::unique_tree<stored_type, node_compare_type, node_order_compare_type>::
   }
 
   // check if node is root
-  if (!(value < *pParent->get()) && !(*pParent->get() < value))
+  if (!(value < pParent->get()) && !(pParent->get() < value))
     return true;
 
   associative_const_iterator_type it = pParent->find_deep(value);  // check if node is descendant of root

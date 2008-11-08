@@ -115,8 +115,8 @@ public:
   pre_order_descendant_iterator operator --(int) { pre_order_descendant_iterator old(*this); --*this; return old;}
 
   // public interface
-  reference_type operator*() const { return  at_top ? *pTop_node->get() : it.operator *();}
-  pointer_type operator->() const { return at_top ? pTop_node->get() : it.operator ->();}
+  reference_type operator*() const { return  at_top ? pTop_node->get() : it.operator *();}
+  pointer_type operator->() const { return at_top ? &pTop_node->get() : it.operator ->();}
   tree_pointer_type node() const { return at_top ? pTop_node : it.node();}
   base_iterator_type base() const { return it; }
   
@@ -185,8 +185,8 @@ public:
   post_order_descendant_iterator operator --(int) { post_order_descendant_iterator old(*this); --*this; return old;}
 
   // public interface
-  reference_type operator*() const { return at_top ? *pTop_node->get() : it.operator *();}
-  pointer_type operator->() const { return at_top ? pTop_node->get() : it.operator ->();}
+  reference_type operator*() const { return at_top ? pTop_node->get() : it.operator *();}
+  pointer_type operator->() const { return at_top ? &pTop_node->get() : it.operator ->();}
   tree_pointer_type node() const { return at_top ? pTop_node : it.node();}
   base_iterator_type base() const { return it; }
 
@@ -252,8 +252,8 @@ public:
   level_order_descendant_iterator operator ++(int) { level_order_descendant_iterator old(*this); ++*this; return old;}
 
   // public interface
-  reference_type operator*() const { return at_top ? *pTop_node->get() : it.operator *();}
-  pointer_type operator->() const { return at_top ? pTop_node->get() : it.operator ->();}
+  reference_type operator*() const { return at_top ? pTop_node->get() : it.operator *();}
+  pointer_type operator->() const { return at_top ? &pTop_node->get() : it.operator ->();}
   tree_pointer_type node() const { return at_top ? pTop_node : it.node();}
   base_iterator_type base() const { return it; }
 

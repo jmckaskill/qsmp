@@ -40,7 +40,7 @@ namespace tcl
     bool operator () (const tree<stored_type, node_compare_type>* lhs, const tree<stored_type, node_compare_type>* rhs) const 
     {
       // call < on actual object
-      return node_compare_type()(*lhs->get(), *rhs->get());
+      return node_compare_type()(lhs->get(), rhs->get());
     }
   };
 }

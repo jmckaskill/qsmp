@@ -97,7 +97,7 @@ typename tcl::sequential_tree<stored_type>::iterator
 tcl::sequential_tree<stored_type>::insert(const tree_type& tree_obj)
 {
   // insert current node
-  const iterator base_it = insert(*tree_obj.get());
+  const iterator base_it = insert(tree_obj.get());
 
   if (base_it != end()) {
     const_iterator it = tree_obj.begin();
@@ -168,7 +168,7 @@ typename tcl::sequential_tree<stored_type>::iterator
 tcl::sequential_tree<stored_type>::insert(const const_iterator& pos, const tree_type& tree_obj)
 {
   // insert current node
-  const iterator base_it = insert(pos, *tree_obj.get());
+  const iterator base_it = insert(pos, tree_obj.get());
 
   if (base_it != end()) {
     const_iterator it = tree_obj.begin();
@@ -186,7 +186,7 @@ tcl::sequential_tree<stored_type>::insert(const const_iterator& pos, const tree_
 template< typename stored_type >
 void tcl::sequential_tree<stored_type>::set(const sequential_tree<stored_type>& tree_obj)
 {
-  set(*tree_obj.get()); // set data for this node
+  set(tree_obj.get()); // set data for this node
 
   const_iterator it = tree_obj.begin();
   const const_iterator it_end = tree_obj.end();
@@ -270,7 +270,7 @@ template<typename stored_type>
 bool tcl::operator == (const sequential_tree<stored_type>& lhs, const sequential_tree<stored_type>& rhs) 
 {
   // check this node
-  if (!(*lhs.get() == *rhs.get()))
+  if (!(lhs.get() == rhs.get()))
     return false;
 
   typename sequential_tree<stored_type>::const_iterator lhs_it = lhs.begin();
@@ -296,7 +296,7 @@ template<typename stored_type>
 bool tcl::operator < (const sequential_tree<stored_type>& lhs, const sequential_tree<stored_type>& rhs) 
 {
   // check this node
-  if (*lhs.get() < *rhs.get())
+  if (lhs.get() < rhs.get())
     return true;
 
   typename sequential_tree<stored_type>::const_iterator lhs_it = lhs.begin();

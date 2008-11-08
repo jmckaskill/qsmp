@@ -46,7 +46,6 @@ class tcl::basic_tree
 public:
   // typedefs
   typedef basic_tree<stored_type, tree_type, container_type> basic_tree_type;
-  typedef stored_type* (*tClone_fcn) (const stored_type&);
   typedef stored_type value_type;
   typedef stored_type& reference;
   typedef const stored_type& const_reference;
@@ -56,32 +55,26 @@ public:
 
 protected:
   // constructors/destructor
-  basic_tree() : pElement(0), pParent_node(0)  {}
+  basic_tree() : pParent_node(0)  {}
   explicit basic_tree(const stored_type& value);
   basic_tree(const basic_tree_type& rhs);  // copy constructor
-  virtual ~basic_tree();
 
 public:
   // public interface
-  const stored_type* get() const { return pElement;}
-  stored_type* get() { return pElement;}
+  const stored_type& get() const { return element_;}
+  stored_type& get() { return element_;}
   bool is_root() const { return pParent_node == 0;}
   size_type size() const { return children.size();}
   size_type max_size() const { return(std::numeric_limits<int>().max)();}
   bool empty() const { return children.empty();}
   tree_type* parent() { return pParent_node;}
   const tree_type* parent() const { return pParent_node;}
-  static void set_clone(const tClone_fcn& fcn) { pClone_fcn = fcn;}
 
 
 protected:
   void set_parent(tree_type* pParent) { pParent_node = pParent;}
   basic_tree_type& operator = (const basic_tree_type& rhs); // assignment operator
-  void set(const stored_type& stored_obj);
-  void allocate_stored_type(stored_type*& element_ptr, const stored_type& value) 
-  { element_ptr = stored_type_allocator.allocate(1,0); stored_type_allocator.construct(element_ptr, value);}
-  void deallocate_stored_type(stored_type* element_ptr) 
-  { stored_type_allocator.destroy(element_ptr); stored_type_allocator.deallocate(element_ptr, 1);}
+  void set(const stored_type& stored_obj){element_ = stored_obj;}
   void allocate_tree_type(tree_type*& tree_ptr, const tree_type& tree_obj)
   { tree_ptr = tree_type_allocator.allocate(1,0); tree_type_allocator.construct(tree_ptr, tree_obj);}
   void deallocate_tree_type(tree_type* tree_ptr)
@@ -91,10 +84,8 @@ protected:
 protected:
   container_type children;
 private:
-  stored_type* pElement;   // data accessor
+  stored_type element_;   // data accessor
   mutable tree_type* pParent_node;
-  static tClone_fcn pClone_fcn;
-  std::allocator<stored_type> stored_type_allocator;
   std::allocator<tree_type> tree_type_allocator;
 };
 

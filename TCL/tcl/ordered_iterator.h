@@ -80,8 +80,8 @@ public:
   bool operator == (const unique_tree_ordered_iterator<stored_type, node_compare_type, node_order_compare_type, const tree_type*, const stored_type*, const stored_type&>& rhs) const { return ordered_it_eq(this, rhs); }
   bool operator != (const unique_tree_ordered_iterator<stored_type, node_compare_type, node_order_compare_type, const tree_type*, const stored_type*, const stored_type&>& rhs) const { return !(*this == rhs); }
 
-  reference_type operator*() const { return  const_cast<reference_type>(*(*it)->get());}
-  pointer_type operator->() const { return const_cast<pointer_type>((*it)->get());}
+  reference_type operator*() const { return  const_cast<reference_type>((*it)->get());}
+  pointer_type operator->() const { return const_cast<pointer_type>(&(*it)->get());}
 
   tree_pointer_type node() const { return const_cast<tree_pointer_type>(*it);}
 

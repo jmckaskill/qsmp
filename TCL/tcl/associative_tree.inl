@@ -163,7 +163,7 @@ typename tcl::associative_tree<stored_type, tree_type, container_type>::iterator
 tcl::associative_tree<stored_type, tree_type, container_type>::insert(const const_iterator pos, const tree_type& tree_obj, tree_type* pParent)
 {
   // insert current node
-  iterator base_it = pParent->insert(pos, *tree_obj.get());
+  iterator base_it = pParent->insert(pos, tree_obj.get());
 
   if (base_it != pParent->end()) {
     const_iterator it = tree_obj.begin();
@@ -180,7 +180,7 @@ tcl::associative_tree<stored_type, tree_type, container_type>::insert(const cons
 template< typename stored_type, typename tree_type, typename container_type>
 void tcl::associative_tree<stored_type, tree_type, container_type>::set(const tree_type& tree_obj, tree_type* pParent)
 {
-  set(*tree_obj.get()); // set data for this node
+  set(tree_obj.get()); // set data for this node
 
   const_iterator it = tree_obj.begin();
   const const_iterator it_end = tree_obj.end();
@@ -236,7 +236,7 @@ template<typename stored_type, typename tree_type, typename container_type>
 bool tcl::operator == (const associative_tree<stored_type, tree_type, container_type>& lhs, const associative_tree<stored_type, tree_type, container_type>& rhs)
 {
   // check this node
-  if ((*lhs.get() < *rhs.get()) || (*rhs.get() < *lhs.get()))
+  if ((lhs.get() < rhs.get()) || (rhs.get() < lhs.get()))
     return false;
 
   typename associative_tree<stored_type, tree_type, container_type>::const_iterator lhs_it = lhs.begin();
@@ -262,7 +262,7 @@ template<typename stored_type, typename tree_type, typename container_type>
 bool tcl::operator < (const associative_tree<stored_type, tree_type, container_type>& lhs, const associative_tree<stored_type, tree_type, container_type>& rhs) 
 {
   // check this node
-  if (*lhs.get() < *rhs.get())
+  if (lhs.get() < rhs.get())
     return true;
 
   typename associative_tree<stored_type, tree_type, container_type>::const_iterator lhs_it = lhs.begin();
