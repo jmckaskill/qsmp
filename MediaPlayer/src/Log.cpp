@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "qsmp/Log.h"
 #include <afx.h>
 

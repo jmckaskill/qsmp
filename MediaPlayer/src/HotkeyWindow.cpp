@@ -1,4 +1,6 @@
+#include "stdafx.h"
 #include "qsmp/HotkeyWindow.h"
+#include "qsmp/HotkeyWindow.moc"
 
 #include "MMShellHook.h"
 

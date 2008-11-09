@@ -1,4 +1,6 @@
+#include "stdafx.h"
 #include "qsmp/PlaylistView.h"
+#include "qsmp/PlaylistView.moc"
 
 #include "qsmp/Player.h"
 

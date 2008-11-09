@@ -1,4 +1,4 @@
-#include "qsmp/common.h"
+#include "stdafx.h"
 #include <iostream>
 #include "qsmp/LuaTcpConsole.h"
 #include "qsmp/PlaylistModel.h"

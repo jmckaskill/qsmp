@@ -1,4 +1,6 @@
+#include "stdafx.h"
 #include "qsmp/Player.h"
+#include "qsmp/Player.moc"
 #include "qsmp/utilities.h"
 #include "qsmp/Log.h"
 

@@ -1,4 +1,6 @@
+#include "stdafx.h"
 #include "qsmp/LuaTcpConsole.h"
+#include "qsmp/LuaTcpConsole.moc"
 #include "qsmp/LuaRegister.h"
 
 QSMP_BEGIN

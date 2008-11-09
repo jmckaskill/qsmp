@@ -6,3 +6,5 @@ build*
 *.wwdb
 Debug
 id3lib/config.h
+*~
+*.swp

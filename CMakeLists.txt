@@ -4,6 +4,8 @@ if(COMMAND cmake_policy)
 endif(COMMAND cmake_policy)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
+include(cmake/Qt4Hacks.cmake)
+include(cmake/PrecompiledHeaders.cmake)
 
 project(SMP)
 
