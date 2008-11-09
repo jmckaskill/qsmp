@@ -1,18 +1,48 @@
+/******************************************************************************
+ * Copyright (C) 2008 James McKaskill <jmckaskill@gmail.com>                  *
+ *                                                                            *
+ * This program is free software; you can redistribute it and/or              *
+ * modify it under the terms of the GNU General Public License as             *
+ * published by the Free Software Foundation; either version 2 of             *
+ * the License, or (at your option) any later version.                        *
+ *                                                                            *
+ * This program is distributed in the hope that it will be useful,            *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of             *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              *
+ * GNU General Public License for more details.                               *
+ *                                                                            *
+ * You should have received a copy of the GNU General Public License          *
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.      *
+ ******************************************************************************/
+
 #ifndef QSMP_VIEWSELECTOR_H_
 #define QSMP_VIEWSELECTOR_H_
 
-#include "qsmp/common.h"
-#include "tcl/sequential_tree.h"
+
+#include <boost/concept_check.hpp>
+#include <boost/function.hpp>
+#include <boost/range.hpp>
+#include <boost/static_assert.hpp>
+#include <qsmp/common.h>
+#include <QtCore/qabstractitemmodel.h>
+#include <QtCore/qvariant.h>
+#include <tcl/sequential_tree.h>
+
+
 
 namespace tree
 {
-  // undefined_range    child_range(iterator parent);
+  //-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
 
   template<class Iterator>
   boost::iterator_range<Iterator> child_range(Iterator it)
   {
     return tree::child_range(*it);
   }
+
+  //-----------------------------------------------------------------------------
 
   //Element iterator
   template<class stored_type>
@@ -22,6 +52,8 @@ namespace tree
     return boost::iterator_range<typename tcl::sequential_tree<stored_type>::iterator>(it->begin(),it->end());
   }
 
+  //-----------------------------------------------------------------------------
+
   //Node iterators
   template<class stored_type>
   boost::iterator_range<typename tcl::sequential_tree<stored_type>::node_iterator>
@@ -29,6 +61,8 @@ namespace tree
   {
     return boost::iterator_range<typename tcl::sequential_tree<stored_type>::node_iterator>(it->node_begin(),it->node_end());
   }
+
+  //-----------------------------------------------------------------------------
 
   struct ChildRange
   {
@@ -39,6 +73,9 @@ namespace tree
     }
   };
 
+  //-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
 
   struct Data
   {
@@ -54,9 +91,20 @@ namespace tree
     }
   };
 
+  //-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
+
 }
 
+
+
+
 QSMP_BEGIN
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 template<class T, class Data = tree::Data, class ChildRange = tree::ChildRange>
 class TreeModel : public QAbstractItemModel

@@ -1,9 +1,29 @@
+/******************************************************************************
+ * Copyright (C) 2008 James McKaskill <jmckaskill@gmail.com>                  *
+ *                                                                            *
+ * This program is free software; you can redistribute it and/or              *
+ * modify it under the terms of the GNU General Public License as             *
+ * published by the Free Software Foundation; either version 2 of             *
+ * the License, or (at your option) any later version.                        *
+ *                                                                            *
+ * This program is distributed in the hope that it will be useful,            *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of             *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              *
+ * GNU General Public License for more details.                               *
+ *                                                                            *
+ * You should have received a copy of the GNU General Public License          *
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.      *
+ ******************************************************************************/
+
 #include "stdafx.h"
-#include "qsmp/LuaTcpConsole.h"
-#include "qsmp/LuaTcpConsole.moc"
-#include "qsmp/LuaRegister.h"
+#include <qsmp/LuaTcpConsole.h>
+#include <qsmp/LuaTcpConsole.moc>
 
 QSMP_BEGIN
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 LuaTcpServer::LuaTcpServer()
 {
@@ -11,6 +31,9 @@ LuaTcpServer::LuaTcpServer()
   bool listening = server_.listen(QHostAddress::Any,QSMP_LUA_CONSOLE_PORT);
   assert(listening);
 }
+
+//-----------------------------------------------------------------------------
+
 void LuaTcpServer::onNewConnection()
 {
   boost::shared_ptr<LuaTcpSocket> socket;
@@ -18,10 +41,17 @@ void LuaTcpServer::onNewConnection()
                                 boost::bind(&LuaTcpServer::onDisconnect,this,socket)));
   sockets_.push_back(socket);
 }
+
+//-----------------------------------------------------------------------------
+
 void LuaTcpServer::onDisconnect(boost::shared_ptr<LuaTcpSocket> socket)
 {
   sockets_.erase(std::remove(sockets_.begin(),sockets_.end(),socket),sockets_.end());
 }
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 namespace
 {
@@ -34,12 +64,18 @@ namespace
     return const_cast<LuaTcpSocket*>(socket);
   }
 
+  //-----------------------------------------------------------------------------
+
   void setSocket(lua_State* L, LuaTcpSocket* socket)
   {
     lua_pushlightuserdata(L,reinterpret_cast<void*>(socket));
     lua_setfield(L,LUA_REGISTRYINDEX,"LuaTcpSocket");
   }
 }
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 LuaTcpSocket::LuaTcpSocket(QTcpSocket* socket,boost::function<void ()> disconnect_callback)
 : socket_(socket),
@@ -57,13 +93,17 @@ LuaTcpSocket::LuaTcpSocket(QTcpSocket* socket,boost::function<void ()> disconnec
   setSocket(lua_,this);
   lua_register(lua_,"print",&LuaTcpSocket_Print);
   lua_register(lua_,"raw_input",&LuaTcpSocket_RawInput);
-  registerAll(lua_);
-
 }
+
+//-----------------------------------------------------------------------------
+
 LuaTcpSocket::~LuaTcpSocket()
 {
   lua_close(lua_);
 }
+
+//-----------------------------------------------------------------------------
+
 int LuaTcpSocket_RawInput(lua_State* L)
 {
   LuaTcpSocket* socket = getSocket(L);
@@ -72,6 +112,8 @@ int LuaTcpSocket_RawInput(lua_State* L)
   lua_pop(L, 1);
   return 0;
 }
+
+//-----------------------------------------------------------------------------
 
 // This is essentially a copy of luaB_print (print function provided with lua)
 // except that instead of printing to stdout, it prints to our socket
@@ -98,6 +140,8 @@ int LuaTcpSocket_Print(lua_State* L){
   return 0;
 }
 
+//-----------------------------------------------------------------------------
+
 void LuaTcpSocket::onReadyRead()
 {
   quint64 to_read = socket_->bytesAvailable();
@@ -118,7 +162,7 @@ void LuaTcpSocket::onReadyRead()
         ii = end(trange);
         --ii;
         terminator_ = "";
-        for(read_buffer_t::iterator i = begin(trange);i!=end(trange);++i)
+        for(read_buffer_t::iterator i = boost::begin(trange);i != boost::end(trange);++i)
           to_replace.push_back(i);
       }
       else
@@ -165,7 +209,7 @@ void LuaTcpSocket::onReadyRead()
     for(jj = to_replace.begin();jj != to_replace.end(); ++jj)
       **jj = ' ';
 
-    luaL_loadbuffer(lua_,&*read_buffer_.begin(),distance(read_buffer_.begin(),ii),"TCP Data");
+    luaL_loadbuffer(lua_,&*read_buffer_.begin(),std::distance(read_buffer_.begin(),ii),"TCP Data");
 
     int status = lua_pcall(lua_,0,0,0);
 
@@ -193,5 +237,9 @@ void LuaTcpSocket::onReadyRead()
     read_buffer_.erase(read_buffer_.begin(),ii);
   }
 }
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 QSMP_END

@@ -33,11 +33,8 @@ include(${QT_USE_FILE})
 set(ui ui/untitled.ui)
 set(headers include/qsmp/common.h
             include/qsmp/utilities.h
-            include/qsmp/Playlist.h
-            include/qsmp/PlaylistManager.h
             include/qsmp/PlaylistModel.inl
             include/qsmp/PlaylistModel.h
-            include/qsmp/LuaRegister.h
             include/qsmp/Log.h
             include/qsmp/LuaTcpConsole.h
             include/qsmp/Player.h
@@ -47,7 +44,6 @@ set(headers include/qsmp/common.h
             src/stdafx.h)
 set(sources src/main.cpp
             src/LuaTcpConsole.cpp
-            src/LuaRegister.cpp
             src/Player.cpp
             src/Log.cpp
             src/PlaylistView.cpp

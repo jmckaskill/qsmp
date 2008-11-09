@@ -1,8 +1,34 @@
+/******************************************************************************
+ * Copyright (C) 2008 James McKaskill <jmckaskill@gmail.com>                  *
+ *                                                                            *
+ * This program is free software; you can redistribute it and/or              *
+ * modify it under the terms of the GNU General Public License as             *
+ * published by the Free Software Foundation; either version 2 of             *
+ * the License, or (at your option) any later version.                        *
+ *                                                                            *
+ * This program is distributed in the hope that it will be useful,            *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of             *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              *
+ * GNU General Public License for more details.                               *
+ *                                                                            *
+ * You should have received a copy of the GNU General Public License          *
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.      *
+ ******************************************************************************/
+
 #ifndef QSMP_PLAYLISTMODEL_H_
 #define QSMP_PLAYLISTMODEL_H_
-#include "qsmp/common.h"
+
+#include <qsmp/common.h>
+#include <QtCore/qabstractitemmodel.h>
+#include <QtCore/qnamespace.h>
+#include <QtCore/qstring.h>
+#include <QtCOre/qvariant.h>
 
 QSMP_BEGIN
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 class PlaylistModelBase : public QAbstractTableModel
 {
@@ -13,6 +39,10 @@ public Q_SLOTS:
 Q_SIGNALS:
   void itemSelected(QString path);
 };
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 template<class RangeFunction>
 class PlaylistModel : public PlaylistModelBase
@@ -36,9 +66,15 @@ private:
   Range         entries_;
 };
 
+//-----------------------------------------------------------------------------
+
 template<class RangeFunction>
-shared_ptr<PlaylistModel<RangeFunction> > NewPlaylist(RangeFunction function)
-{return shared_ptr<PlaylistModel<RangeFunction> >(new PlaylistModel<RangeFunction>(function));}
+boost::shared_ptr<PlaylistModel<RangeFunction> > NewPlaylist(RangeFunction function)
+{return boost::shared_ptr<PlaylistModel<RangeFunction> >(new PlaylistModel<RangeFunction>(function));}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 QSMP_END
 

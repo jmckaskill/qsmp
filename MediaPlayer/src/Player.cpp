@@ -1,8 +1,27 @@
+/******************************************************************************
+ * Copyright (C) 2008 James McKaskill <jmckaskill@gmail.com>                  *
+ *                                                                            *
+ * This program is free software; you can redistribute it and/or              *
+ * modify it under the terms of the GNU General Public License as             *
+ * published by the Free Software Foundation; either version 2 of             *
+ * the License, or (at your option) any later version.                        *
+ *                                                                            *
+ * This program is distributed in the hope that it will be useful,            *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of             *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              *
+ * GNU General Public License for more details.                               *
+ *                                                                            *
+ * You should have received a copy of the GNU General Public License          *
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.      *
+ ******************************************************************************/
+
 #include "stdafx.h"
-#include "qsmp/Player.h"
-#include "qsmp/Player.moc"
-#include "qsmp/utilities.h"
-#include "qsmp/Log.h"
+#include <qsmp/Player.h>
+#include <qsmp/Player.moc>
+
+#include <qsmp/Log.h>
+#include <qsmp/utilities.h>
+
 
 QSMP_BEGIN
 
@@ -15,7 +34,7 @@ Player::Player(boost::function<Media ()> get_next)
 audio_(Phonon::MusicCategory),
 file_active_(false)
 {
-  LOG("Player") << "Initialising";
+  QSMP_LOG("Player") << "Initialising";
   audio_path_ = Phonon::createPath(&media_,&audio_);
   connect(&media_, SIGNAL(aboutToFinish()), this, SLOT(EnqueueNext()));
   connect(&media_, SIGNAL(currentSourceChanged(const Phonon::MediaSource &)), this, SIGNAL(OnSourceChanged()));
@@ -31,7 +50,7 @@ void Player::PlayFile(const Media& entry, bool play_file)
   {
     if (play_file || file_active_)
     {
-      LOG("Player") << "Play: " << entry;
+      QSMP_LOG("Player") << "Play: " << entry;
       media_.setCurrentSource(QString::fromStdString(entry.path().file_string()));
       media_.play();
       file_active_ = true;
@@ -54,7 +73,7 @@ void Player::Play()
   }
   else
   {
-    LOG("Player") << "Play";
+    QSMP_LOG("Player") << "Play";
     media_.play();
   }
 }
@@ -65,7 +84,7 @@ void Player::Pause()
 {
   if (file_active_)
   {
-    LOG("Player") << "Pause";
+    QSMP_LOG("Player") << "Pause";
     media_.pause();
   }
 }
@@ -101,7 +120,7 @@ void Player::Stop()
 {
   if (file_active_)
   {
-    LOG("Player") << "Stop";
+    QSMP_LOG("Player") << "Stop";
     file_active_ = false;
     media_.stop();
   }
@@ -149,7 +168,7 @@ namespace
 
 void Player::StatusChanged(Phonon::State newState, Phonon::State oldState)
 {
-  LOG("Player") << "Status changed: " << oldState << " -> " << newState;
+  QSMP_LOG("Player") << "Status changed: " << oldState << " -> " << newState;
   switch (newState)
   {
   case Phonon::PlayingState:
@@ -177,7 +196,7 @@ void Player::EnqueueNext()
   if (!get_next_.empty())
   {
     std::string next = get_next_().path().file_string();
-    LOG("Player") << "Getting next: " << next;
+    QSMP_LOG("Player") << "Getting next: " << next;
     media_.enqueue(QString::fromStdString(next));
   }
 }
@@ -213,7 +232,7 @@ void PlayerHistory::Init()
   cache_.push_back(Media());
   current_ = cache_.begin();
   queue_end_ = current_;
-  LOG("History") << "Initialising";
+  QSMP_LOG("History") << "Initialising";
 }
 
 //-----------------------------------------------------------------------------
@@ -250,7 +269,7 @@ void PlayerHistory::SetNextCallback(boost::function<Media ()> callback)
 
 void PlayerHistory::InvalidateCache()
 {
-  LOG("History") << "Cache invalidated";
+  QSMP_LOG("History") << "Cache invalidated";
   cache_t::iterator cache_begin = queue_end_;
   if (cache_begin == cache_.begin() ||
     ( current_ == queue_end_ && 
@@ -280,7 +299,7 @@ void PlayerHistory::InvalidateCache()
 
 Media PlayerHistory::Next(bool force_play)
 {
-  LOG("History") << "Next";
+  QSMP_LOG("History") << "Next";
   return UpdateCurrent(GetNext(current_),true,force_play);
 }
 
@@ -288,7 +307,7 @@ Media PlayerHistory::Next(bool force_play)
 
 Media PlayerHistory::Previous(bool force_play)
 {
-  LOG("History") << "Previous";
+  QSMP_LOG("History") << "Previous";
   cache_t::iterator i = current_;
   if (i != cache_.begin())
     --i;

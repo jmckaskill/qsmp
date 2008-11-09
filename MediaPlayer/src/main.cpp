@@ -1,23 +1,56 @@
-#include "stdafx.h"
-#include <iostream>
-#include "qsmp/LuaTcpConsole.h"
-#include "qsmp/PlaylistModel.h"
-#include "qsmp/Player.h"
-#include "qsmp/PlaylistView.h"
-#include "qsmp/utilities.h"
-#include "qsmp/HotkeyWindow.h"
-#include "qsmp/Log.h"
+/******************************************************************************
+ * Copyright (C) 2008 James McKaskill <jmckaskill@gmail.com>                  *
+ *                                                                            *
+ * This program is free software; you can redistribute it and/or              *
+ * modify it under the terms of the GNU General Public License as             *
+ * published by the Free Software Foundation; either version 2 of             *
+ * the License, or (at your option) any later version.                        *
+ *                                                                            *
+ * This program is distributed in the hope that it will be useful,            *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of             *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              *
+ * GNU General Public License for more details.                               *
+ *                                                                            *
+ * You should have received a copy of the GNU General Public License          *
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.      *
+ ******************************************************************************/
 
+#include "stdafx.h"
+
+#include <algorithm>
+#include <boost/bind.hpp>
+#include <boost/shared_ptr.hpp>
+#include <iostream>
+#include <qsmp/HotkeyWindow.h>
+#include <qsmp/Log.h>
+#include <qsmp/LuaTcpConsole.h>
+#include <qsmp/PlaylistModel.h>
+#include <qsmp/Player.h>
+#include <qsmp/PlaylistView.h>
+#include <qsmp/utilities.h>
+#include <QtGui/qapplication.h>
+#include <QtCore/qobject.h>
+#include <QtGui/qboxlayout.h>
+#include <string>
+#include <tbb/task_scheduler_init.h>
+#include <vector>
+#include <windows.h>
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 int main(int argc, char **argv)
 {
   using namespace qsmp;
+  using boost::bind;
+  using boost::filesystem::recursive_directory_iterator;
   try
   {
     qInstallMsgHandler(&qsmp::QtMsgHandler);
 
     DWORD tick = ::GetTickCount();
-    LOG("Seed") << tick;
+    QSMP_LOG("Seed") << tick;
     srand(tick);
 
     tbb::task_scheduler_init init;
@@ -47,13 +80,13 @@ int main(int argc, char **argv)
 
     PlayerHistory history;
     Player player(bind(&PlayerHistory::PlayerNext,&history));
-    history.SetNextCallback(bind(&chooseRandom<Range_t>,ref(paths)));
+    history.SetNextCallback(bind(&chooseRandom<Range_t>,boost::ref(paths)));
     history.SetPlayer(&player);
 
     //Model_t model(paths);
-    shared_ptr<PlaylistModelBase> model = NewPlaylist(bind(construct<HistoryRange_t>(),
-                                                           bind(&PlayerHistory::begin,&history,5),
-                                                           bind(&PlayerHistory::end,&history,15)));
+    boost::shared_ptr<PlaylistModelBase> model = NewPlaylist(bind(construct<HistoryRange_t>(),
+                                                                  bind(&PlayerHistory::begin,&history,5),
+                                                                  bind(&PlayerHistory::end,&history,15)));
     QObject::connect(&history, SIGNAL(OnHistoryUpdated()), model.get(), SLOT(Reset()));
 
     QVBoxLayout* layout = new QVBoxLayout;
@@ -87,3 +120,7 @@ int main(int argc, char **argv)
     qFatal("Exception: %s",e.what());
   }
 }
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------

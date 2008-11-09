@@ -1,15 +1,44 @@
+/******************************************************************************
+ * Copyright (C) 2008 James McKaskill <jmckaskill@gmail.com>                  *
+ *                                                                            *
+ * This program is free software; you can redistribute it and/or              *
+ * modify it under the terms of the GNU General Public License as             *
+ * published by the Free Software Foundation; either version 2 of             *
+ * the License, or (at your option) any later version.                        *
+ *                                                                            *
+ * This program is distributed in the hope that it will be useful,            *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of             *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              *
+ * GNU General Public License for more details.                               *
+ *                                                                            *
+ * You should have received a copy of the GNU General Public License          *
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.      *
+ ******************************************************************************/
+
 #ifndef QSMP_LOG_H_
 #define QSMP_LOG_H_
 
-#include "qsmp/common.h"
-#include "tcl/tree.h"
 
-#define LOG_NEW_SCOPE(context) LogEntryBuffer _logger(context,__FILE__,__LINE__,false)
-#define LOG_SCOPE _logger.StartLogEntry()
-#define LOG(context) LogEntryBuffer(context,__FILE__,__LINE__,true)
-#define LOG_CONTEXT LogManager::lease()->GetContext
+#include <boost/array.hpp>
+#include <boost/noncopyable.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/utility/singleton.hpp>
+#include <iostream>
+#include <fstream>
+#include <qsmp/common.h>
+#include <string>
+#include <tcl/tree.h>
+#include <utility>
+
+
+#define QSMP_LOG_NEW_SCOPE(context) qsmp::LogEntryBuffer _qsmp_logger(context,__FILE__,__LINE__,false)
+#define QSMP_LOG_SCOPE _qsmp_logger.StartLogEntry()
+#define QSMP_LOG(context) qsmp::LogEntryBuffer(context,__FILE__,__LINE__,true)
+
 
 QSMP_BEGIN
+
+class LogEntryBuffer;
 
 enum LogOutput
 {
@@ -20,7 +49,9 @@ enum LogOutput
   LogOutput_Num,
 };
 
-class LogEntryBuffer;
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 struct LogContextData
 {
@@ -40,9 +71,9 @@ struct LogContextData
   std::string full_key_;
   std::string key_;
 
-  array<bool, LogOutput_Num> outputs_;
+  boost::array<bool, LogOutput_Num> outputs_;
 
-  bool operator==(iterator_range<const char*> str)const
+  bool operator==(boost::iterator_range<const char*> str)const
   {
     return boost::equals(key_,str);
   }
@@ -54,10 +85,16 @@ struct LogContextData
   {return key_ < r.key_;}
 };
 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
 typedef tcl::tree<LogContextData>::iterator LogContext;
 typedef std::pair<LogContext, std::locale> LogBufferData;
 
 void QtMsgHandler(QtMsgType type, const char* buf);
+
+//-----------------------------------------------------------------------------
 
 class LogManager : public boost::singleton<LogManager>
 {
@@ -80,6 +117,18 @@ private:
   LogTree logs_;
 };
 
+//-----------------------------------------------------------------------------
+
+inline LogContext GetLogContext(const char* context)
+{return LogManager::lease()->GetContext(context);}
+
+inline LogContext GetLogContext(LogContext context, const char* sub_context)
+{return LogManager::lease()->GetContext(context,sub_context);}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
 class LogEntryBuffer : boost::noncopyable
 {
   QSMP_NON_COPYABLE(LogEntryBuffer)
@@ -101,6 +150,8 @@ private:
   LogManager::lease   manager_;
 };
 
+//-----------------------------------------------------------------------------
+
 //We need to wrap all calls to << to get ADL to work correctly
 // ie we want last stage lookup of our type T to be with a type in std
 template<class T>
@@ -110,5 +161,10 @@ LogEntryBuffer& operator<<(LogEntryBuffer& buffer, const T& a)
   return buffer;
 }
 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
 QSMP_END
+
 #endif // QSMP_LOG_H_

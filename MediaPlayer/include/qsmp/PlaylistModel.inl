@@ -1,13 +1,42 @@
+/******************************************************************************
+ * Copyright (C) 2008 James McKaskill <jmckaskill@gmail.com>                  *
+ *                                                                            *
+ * This program is free software; you can redistribute it and/or              *
+ * modify it under the terms of the GNU General Public License as             *
+ * published by the Free Software Foundation; either version 2 of             *
+ * the License, or (at your option) any later version.                        *
+ *                                                                            *
+ * This program is distributed in the hope that it will be useful,            *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of             *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              *
+ * GNU General Public License for more details.                               *
+ *                                                                            *
+ * You should have received a copy of the GNU General Public License          *
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.      *
+ ******************************************************************************/
+
 #ifndef QSMP_PLAYLISTMODEL_INL_
 #define QSMP_PLAYLISTMODEL_INL_
 
+#include <boost/range.hpp>
+#include <string>
+#include <QtCore/qstring.h>
+
 QSMP_BEGIN
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
 template<class RangeFunction>
 PlaylistModel<RangeFunction>::PlaylistModel(RangeFunction get_entries)
 : get_entries_(get_entries),
   entries_(get_entries())
 {
 }
+
+//-----------------------------------------------------------------------------
+
 template<class RangeFunction>
 QVariant PlaylistModel<RangeFunction>::data(const QModelIndex &index, int role /* = Qt::DisplayRole */)const 
 {
@@ -40,6 +69,8 @@ QVariant PlaylistModel<RangeFunction>::data(const QModelIndex &index, int role /
   return ret;
 }
 
+//-----------------------------------------------------------------------------
+
 template<class RangeFunction>
 int PlaylistModel<RangeFunction>::rowCount(const QModelIndex& parent /* = QModelIndex */)const 
 {
@@ -52,6 +83,8 @@ int PlaylistModel<RangeFunction>::rowCount(const QModelIndex& parent /* = QModel
     return 0;
   }
 }
+
+//-----------------------------------------------------------------------------
 
 template<class RangeFunction>
 int PlaylistModel<RangeFunction>::columnCount(const QModelIndex& parent /* = QModelIndex */)const 
@@ -66,11 +99,15 @@ int PlaylistModel<RangeFunction>::columnCount(const QModelIndex& parent /* = QMo
   }
 }
 
+//-----------------------------------------------------------------------------
+
 template<class RangeFunction>
 void PlaylistModel<RangeFunction>::onDoubleClicked(const QModelIndex &index)
 {
  // itemSelected(QString::fromStdString((boost::begin(*paths_) + index.row())->path_.file_string()));
 }
+
+//-----------------------------------------------------------------------------
 
 template<class RangeFunction>
 void PlaylistModel<RangeFunction>::sort(int column, Qt::SortOrder order /* = Qt::AscendingOrder */)
@@ -89,6 +126,10 @@ void PlaylistModel<RangeFunction>::sort(int column, Qt::SortOrder order /* = Qt:
   }
   reset();
 }
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 QSMP_END
 
