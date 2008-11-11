@@ -22,7 +22,7 @@
 #include <QtCore/qabstractitemmodel.h>
 #include <QtCore/qnamespace.h>
 #include <QtCore/qstring.h>
-#include <QtCOre/qvariant.h>
+#include <QtCore/qvariant.h>
 
 QSMP_BEGIN
 

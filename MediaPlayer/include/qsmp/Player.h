@@ -95,24 +95,21 @@ public:
   PlayerHistory();
   PlayerHistory(Player* player);
 
-  class const_cache_iterator : public std::iterator<std::bidirectional_iterator_tag,const Media>
+  class const_cache_iterator : public std::iterator<std::random_access_iterator_tag,const Media>
   {
   public:
     reference operator*()const
     {
-      assert(iter_ != history_->cache_.end());
-      return *iter_;
+      return history_->cache_[index_];
     }
     pointer operator->()const
     {
-      assert(iter_ != history_->cache_.end());
-      return iter_.operator ->();
+      return &history_->cache_[index_];
     }
 
     const_cache_iterator& operator++()//preincrement
     {
-      iter_ = history_->GetNext(iter_);
-      ++index_;
+      index_ = history_->GetNext(index_);
       return *this;
     }
     const_cache_iterator  operator++(int)//postincrement
@@ -121,21 +118,34 @@ public:
       ++(*this);
       return ret;
     }
+    const_cache_iterator& operator+=(int diff)
+    {
+      index_ = history_->GetNext(index_,diff);
+      return *this;
+    }
     const_cache_iterator& operator--()//predecrement
     {
-      --iter_;
+      --index_;
       return *this;
     }
     const_cache_iterator  operator--(int)//postdecrement
     {
-      return const_cache_iterator(history_,iter_--,index_--);
+      return const_cache_iterator(history_,index_--);
+    }
+    const_cache_iterator& operator-=(int diff)
+    {
+      index_ -= diff;
+      return *this;
+    }
+    ptrdiff_t operator-(const_cache_iterator r)
+    {
+      return index_ - r.index_;
     }
 
     bool operator==(const_cache_iterator r)
     {
       assert(history_ == r.history_);
-      return (iter_ == r.iter_) ||
-             (index_ == r.index_);
+      return (index_ == r.index_);
     }
     bool operator!=(const_cache_iterator r)
     {
@@ -144,43 +154,30 @@ public:
   private:
     friend class PlayerHistory;
 
-    const_cache_iterator(PlayerHistory* history, std::list<Media>::iterator iter, int index)
+    const_cache_iterator(PlayerHistory* history, int index)
       : history_(history),
-        iter_(iter),
         index_(index)
     {}
 
-    PlayerHistory* history_;
-    std::list<Media>::iterator iter_;
-    int                         index_;
+    PlayerHistory*               history_;
+    int                          index_;
   };
 
-  typedef std::list<Media>::const_reverse_iterator const_played_iterator;
-  typedef std::list<Media>::const_iterator const_queue_iterator;
-  typedef const_cache_iterator const_history_iterator;
-  const_queue_iterator queue_begin()const{return current_;}
-  const_queue_iterator queue_end()const{return queue_end_;}
-  const_cache_iterator next_begin(){return const_cache_iterator(this,queue_end_,0);}
-  const_cache_iterator next_end(size_t cache_size){return const_cache_iterator(this,cache_.end(),cache_size);}
-  const_played_iterator played_begin()const{return const_played_iterator(current_);}
-  const_played_iterator played_end()const
-  {return const_played_iterator(cache_.begin());}//Note: this removes access to the first element, which is always NULL
-
-  const_history_iterator begin(size_t max_old_cache)
+  const_cache_iterator begin()
   {
-    const_history_iterator i(this,current_,0);
-    while(i->valid() && max_old_cache > 0)
-    {
-      --i;
-      --max_old_cache;
-    }
-    if (!i->valid())
-      ++i;
-    return i;
+    return const_cache_iterator(this,0);
   }
-  const_history_iterator end(size_t cache_size)
+
+  const_cache_iterator begin(size_t max_old_cache)
   {
-    return const_history_iterator(this,cache_.end(),cache_size + std::distance(current_,queue_end_));
+    int old_begin = int(current_) - max_old_cache;
+    if (old_begin < 0)
+      old_begin = 0;
+    return const_cache_iterator(this,old_begin);
+  }
+  const_cache_iterator end(size_t cache_size)
+  {
+    return const_cache_iterator(this,cache_size + queue_end_);
   }
 
   void PlayFile(const Media& entry);
@@ -209,14 +206,17 @@ Q_SIGNALS:
   void OnHistoryUpdated();
 private:
   friend class const_cache_iterator;
-  typedef std::list<Media> cache_t;
+  typedef std::vector<Media> cache_t;
   void                Init();
-  cache_t::iterator   GetNext(cache_t::iterator ii);
-  Media               UpdateCurrent(cache_t::iterator new_current, bool send_play, bool force_play);
+  size_t              GetNext(size_t i, size_t offset = 1);
+  Media               UpdateCurrent(size_t new_current, bool send_play, bool force_play);
+
+  bool                current_valid()const{return current_!=cache_.size() && cache_[current_].valid();}
+  Media*              current(){return &cache_[current_];}
 
   cache_t             cache_;
-  cache_t::iterator   current_;
-  cache_t::iterator   queue_end_;
+  size_t              current_;
+  size_t              queue_end_;
   bool                next_enqueued_;
   bool                current_played_;
   boost::function<Media ()> get_next_;

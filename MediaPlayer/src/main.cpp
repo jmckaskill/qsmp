@@ -28,6 +28,7 @@
 #include <qsmp/Player.h>
 #include <qsmp/PlaylistView.h>
 #include <qsmp/utilities.h>
+#include <qsmp/ViewSelector.h>
 #include <QtGui/qapplication.h>
 #include <QtCore/qobject.h>
 #include <QtGui/qboxlayout.h>
@@ -75,7 +76,7 @@ int main(int argc, char **argv)
 
     typedef boost::iterator_range<std::vector<Media>::iterator> Range_t;
     typedef PlaylistModel<Range_t> Model_t;
-    typedef boost::iterator_range<PlayerHistory::const_history_iterator> HistoryRange_t;
+    typedef boost::iterator_range<PlayerHistory::const_cache_iterator> HistoryRange_t;
     typedef PlaylistModel<HistoryRange_t> HistoryModel_t;
 
     PlayerHistory history;
@@ -84,20 +85,33 @@ int main(int argc, char **argv)
     history.SetPlayer(&player);
 
     //Model_t model(paths);
-    boost::shared_ptr<PlaylistModelBase> model = NewPlaylist(bind(construct<HistoryRange_t>(),
+    boost::shared_ptr<PlaylistModelBase> model = NewPlaylist(bind(Construct<HistoryRange_t>(),
                                                                   bind(&PlayerHistory::begin,&history,5),
                                                                   bind(&PlayerHistory::end,&history,15)));
     QObject::connect(&history, SIGNAL(OnHistoryUpdated()), model.get(), SLOT(Reset()));
 
-    QVBoxLayout* layout = new QVBoxLayout;
-    layout->setContentsMargins(0,0,0,0);
-    layout->setSpacing(0);
+    boost::function<QLayout* ()> history_view 
+      = bind(NewLayout<QVBoxLayout>(),
+             bind(New<PlaylistView>(),model.get()),
+             bind(New<PlayerControl>(),&player,&history));
 
-    layout->addWidget(new PlaylistView(model.get()));
-    layout->addWidget(new PlayerControl(&player,&history));
+    boost::function<QLayout* ()> playlist_view
+      = bind(NewLayout<QVBoxLayout>(),
+             bind(New<PlaylistView>(),model.get()),
+             bind(New<PlayerControl>(),&player,&history));
+    
+    QWidget* view_widget = new QWidget;
+    ViewSelector* view_selector = new ViewSelector(view_widget);
+    QHBoxLayout* view_layout = new QHBoxLayout;
+
+    view_layout->addWidget(view_selector);
+    view_layout->addWidget(view_widget);
+
+    view_selector->AddViewEntry(history_view, "History");
+    view_selector->AddViewEntry(playlist_view, "Playlist");
 
     HotkeyWindow window;
-    window.setLayout(layout);
+    window.setLayout(view_layout);
     window.show();
 
     window.RegisterHotkeys();

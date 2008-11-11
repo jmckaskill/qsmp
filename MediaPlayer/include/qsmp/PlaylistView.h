@@ -52,7 +52,7 @@ public:
 private:
   void Init();
   QTreeView* view_;
-  QSortFilterProxyModel* proxy_;
+  //QSortFilterProxyModel* proxy_;
 };
 
 //-----------------------------------------------------------------------------

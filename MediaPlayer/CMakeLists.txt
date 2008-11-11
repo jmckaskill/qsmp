@@ -49,6 +49,7 @@ set(sources src/main.cpp
             src/PlaylistView.cpp
             src/HotkeyWindow.cpp
             src/PlaylistModel.cpp
+            src/ViewSelector.cpp
             src/stdafx.cpp)
 
 qsmp_qt4_automoc(${sources})

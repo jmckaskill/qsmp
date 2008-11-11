@@ -331,7 +331,7 @@ typename boost::range_reference<T>::type chooseRandom(T range)
 //-----------------------------------------------------------------------------
 
 template<class T>
-struct construct
+struct Construct
 {
   typedef T result_type;
 
@@ -346,6 +346,144 @@ struct construct
   T operator()(const T1& a1, const T2& a2)const
   {return T(a1,a2);}
 };
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+template<class T>
+struct New
+{
+  typedef T* result_type;
+
+  T* operator()()const
+  {return new T();}
+
+  template<class T1>
+  T* operator()(const T1& a1)const
+  {return new T(a1);}
+
+  template<class T1,class T2>
+  T* operator()(const T1& a1, const T2& a2)const
+  {return new T(a1,a2);}
+};
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+template<class Layout>
+struct NewLayout
+{
+  typedef Layout* result_type;
+
+  Layout* operator()(QWidget* widget)const
+  {
+    Layout* layout = new Layout;
+    layout->addWidget(widget);
+    return layout;
+  }
+
+  Layout* operator()(QWidget* widget1, QWidget* widget2)const
+  {
+    Layout* layout = new Layout;
+    layout->addWidget(widget1);
+    layout->addWidget(widget2);
+    return layout;
+  }
+
+};
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+//TODO(james): These should be replaced with something more generic ... tuple/fusion?
+
+template<class First>
+struct Select1st
+{
+  typedef First& result_type;
+
+  template<class Second>
+  First& operator()(std::pair<First,Second>& pair)const
+  {
+    return pair.first;
+  }
+};
+
+//-----------------------------------------------------------------------------
+
+template<class First>
+struct Select1stConst
+{
+  typedef const First& result_type;
+
+  template<class Second>
+  const First& operator()(const std::pair<First,Second>& pair)const
+  {
+    return pair.first;
+  }
+};
+
+//-----------------------------------------------------------------------------
+
+template<class Second>
+struct Select2nd
+{
+  typedef Second& result_type;
+
+  template<class First>
+  Second& operator()(std::pair<First,Second>& pair)const
+  {
+    return pair.second;
+  }
+};
+
+//-----------------------------------------------------------------------------
+
+template<class Second>
+struct Select2ndConst
+{
+  typedef const Second& result_type;
+
+  template<class First>
+  const Second& operator()(const std::pair<First,Second>& pair)const
+  {
+    return pair.second;
+  }
+};
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+struct ScopeProfile
+{
+  ScopeProfile(DWORD& ticks)
+    : ticks_(ticks),
+    tick_(::GetTickCount())
+  {}
+  ~ScopeProfile()
+  {
+    ticks_ += ::GetTickCount() - tick_;
+  }
+  DWORD& ticks_;
+  DWORD  tick_;
+};
+
+//-----------------------------------------------------------------------------
+
+#define QSMP_PROFILE(function) \
+  static int i = 0;\
+  static DWORD ticks = 0;\
+  ScopeProfile _profile(ticks);\
+  if (i++ > 10000)\
+  {\
+  QSMP_LOG("Profile") << #function << ": " << ticks;\
+    ticks = 0;\
+    i = 0;\
+  }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

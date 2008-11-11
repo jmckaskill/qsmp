@@ -52,12 +52,12 @@ PlaylistView::PlaylistView(QAbstractItemModel* model)
 
 void PlaylistView::Init()
 {
-  proxy_ = new QSortFilterProxyModel;
-  proxy_->setFilterKeyColumn(-1);
-  proxy_->setFilterCaseSensitivity(Qt::CaseInsensitive);
+  //proxy_ = new QSortFilterProxyModel;
+  //proxy_->setFilterKeyColumn(-1);
+  //proxy_->setFilterCaseSensitivity(Qt::CaseInsensitive);
 
   view_ = new QTreeView;
-  view_->setModel(proxy_);
+  //view_->setModel(proxy_);
   view_->setAlternatingRowColors(true);
   view_->setUniformRowHeights(true);
   //view_->setSortingEnabled(true);
@@ -71,8 +71,8 @@ void PlaylistView::Init()
   view_->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
   QLineEdit* filter_line = new QLineEdit;
-  QObject::connect(filter_line, SIGNAL(textChanged(const QString &)),
-                   proxy_, SLOT(setFilterRegExp(const QString &)));
+  //QObject::connect(filter_line, SIGNAL(textChanged(const QString &)),
+                   //proxy_, SLOT(setFilterRegExp(const QString &)));
 
   QVBoxLayout* layout = new QVBoxLayout;
   setLayout(layout);
@@ -86,7 +86,8 @@ void PlaylistView::Init()
 
 void PlaylistView::SetModel(QAbstractItemModel *model)
 {
-  proxy_->setSourceModel(model);
+  //proxy_->setSourceModel(model);
+  view_->setModel(model);
 }
 
 //-----------------------------------------------------------------------------

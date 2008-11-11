@@ -226,11 +226,7 @@ current_played_(false)
 
 void PlayerHistory::Init()
 {
-  //We insert a dummy first entry, which makes the next/previous logic
-  //much simpler since we can insert an item at the end of the list and even
-  //when the list is empty, the current is before this
-  cache_.push_back(Media());
-  current_ = cache_.begin();
+  current_ = 0;
   queue_end_ = current_;
   QSMP_LOG("History") << "Initialising";
 }
@@ -249,11 +245,14 @@ void PlayerHistory::SetPlayer(Player* player)
 
 void PlayerHistory::PlayFile(const Media& entry)
 {
-  cache_t::iterator i = current_;
+  bool shift_queue = (queue_end_ != current_);
+  cache_t::iterator i = current_ + cache_.begin();
   if (i != cache_.end())
     ++i;
 
   cache_.insert(i,entry);
+  if (shift_queue)
+    ++queue_end_;
   Next(true);
 }
 
@@ -270,27 +269,22 @@ void PlayerHistory::SetNextCallback(boost::function<Media ()> callback)
 void PlayerHistory::InvalidateCache()
 {
   QSMP_LOG("History") << "Cache invalidated";
-  cache_t::iterator cache_begin = queue_end_;
-  if (cache_begin == cache_.begin() ||
-    ( current_ == queue_end_ && 
-    current_played_ && 
-    cache_begin != cache_.end()
-    )
-    )
+  size_t cache_begin = queue_end_;
+  if (cache_begin == current_ && current_valid())
   {
     ++cache_begin;
   }
   bool current_erased = (cache_begin == current_);
   bool queue_end_erased = current_erased || (cache_begin == queue_end_);
-  cache_.erase(cache_begin,cache_.end());
+  cache_.erase(cache_.begin() + cache_begin,cache_.end());
 
   if (queue_end_erased)
   {
-    queue_end_ = cache_.end();
+    queue_end_ = cache_.size();
   }
   if (current_erased)
   {
-    UpdateCurrent(cache_.end(),true,false);
+    UpdateCurrent(cache_.size(),true,false);
   }
   OnHistoryUpdated();
 }
@@ -308,30 +302,30 @@ Media PlayerHistory::Next(bool force_play)
 Media PlayerHistory::Previous(bool force_play)
 {
   QSMP_LOG("History") << "Previous";
-  cache_t::iterator i = current_;
-  if (i != cache_.begin())
+  size_t i = current_;
+  if (i != 0)
     --i;
   return UpdateCurrent(i,true,force_play);
 }
 
 //-----------------------------------------------------------------------------
 
-Media PlayerHistory::UpdateCurrent(cache_t::iterator new_current, bool send_play, bool force_play)
+Media PlayerHistory::UpdateCurrent(size_t new_current, bool send_play, bool force_play)
 {
   Media ret;
 
   //Pre change
   bool shift_queue = (current_ == queue_end_);
-  if (current_ != cache_.end() && current_->valid())
-    current_->set_queue_index(-1);
+  if (current_valid())
+    current()->set_queue_index(-1);
 
   current_ = new_current;
 
   //Post change
-  if (current_ != cache_.end() && current_->valid())
+  if (current_valid())
   {
-    current_->set_queue_index(0);
-    ret = *current_;
+    current()->set_queue_index(0);
+    ret = *current();
   }
   if (shift_queue)
     queue_end_ = current_;
@@ -339,7 +333,7 @@ Media PlayerHistory::UpdateCurrent(cache_t::iterator new_current, bool send_play
   //Update the queue_index's
   cache_t::iterator ii;
   int i = 0;
-  for(ii = current_; ii != queue_end_; ++ii)
+  for(ii = (cache_.begin() + current_); ii != (cache_.begin() + queue_end_); ++ii)
   {
     if (ii->valid())
       ii->set_queue_index(i++);
@@ -359,19 +353,25 @@ Media PlayerHistory::UpdateCurrent(cache_t::iterator new_current, bool send_play
 
 //-----------------------------------------------------------------------------
 
-PlayerHistory::cache_t::iterator PlayerHistory::GetNext(cache_t::iterator ii)
+//Warning: may invalidate all iterators
+size_t PlayerHistory::GetNext(size_t ii, size_t offset)
 {
-  ++ii;
-  if (ii == cache_.end())
+  bool resize = false;
+  if (ii + offset >= cache_.size())
   {
-    Media next = get_next_.empty() ? Media() : get_next_();
-    if (next.valid())
+    size_t min_size = ii + offset + 1;
+    if (cache_.capacity() < min_size)
     {
-      cache_.push_back(next);
-      --ii;
+      cache_.reserve(min_size);
+      resize = true;
+    }
+    size_t new_items = min_size - cache_.size();
+    while(new_items-- > 0)
+    {
+      cache_.push_back(get_next_.empty() ? Media() : get_next_());
     }
   }
-  return ii;
+  return ii + offset;
 }
 
 //-----------------------------------------------------------------------------
@@ -385,6 +385,10 @@ void PlayerHistory::SourceChanged()
     UpdateCurrent(GetNext(current_),false,false);
   }
   current_played_ = true;
+  if (current_valid())
+    QSMP_LOG("History") << "Playing: " << current()->path().file_string();
+  else
+    QSMP_LOG("History") << "Playing: Unknown";
 }
 
 //-----------------------------------------------------------------------------
@@ -407,10 +411,10 @@ void PlayerHistory::Status(PlayerState state)
 
 Media PlayerHistory::PlayerNext()
 {
-  bool inc_current = (current_played_ || (current_ == cache_.end()) || !current_->valid());
+  bool inc_current = (current_played_ || !current_valid());
   next_enqueued_ = inc_current;
-  cache_t::iterator i = inc_current ? GetNext(current_) : current_;
-  return (i != cache_.end()) ? *i : Media();
+  size_t i = inc_current ? GetNext(current_) : current_;
+  return (i != cache_.size()) ? cache_[i] : Media();
 }
 
 //-----------------------------------------------------------------------------
