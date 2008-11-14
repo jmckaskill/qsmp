@@ -51,7 +51,7 @@ void Player::PlayFile(const Media& entry, bool play_file)
     if (play_file || file_active_)
     {
       QSMP_LOG("Player") << "Play: " << entry;
-      media_.setCurrentSource(QString::fromStdString(entry.path().file_string()));
+      media_.setCurrentSource(entry.path());
       media_.play();
       file_active_ = true;
     }
@@ -195,9 +195,9 @@ void Player::EnqueueNext()
 {
   if (!get_next_.empty())
   {
-    std::string next = get_next_().path().file_string();
+    QString next = get_next_().path();
     QSMP_LOG("Player") << "Getting next: " << next;
-    media_.enqueue(QString::fromStdString(next));
+    media_.enqueue(next);
   }
 }
 
@@ -386,7 +386,7 @@ void PlayerHistory::SourceChanged()
   }
   current_played_ = true;
   if (current_valid())
-    QSMP_LOG("History") << "Playing: " << current()->path().file_string();
+    QSMP_LOG("History") << "Playing: " << current()->path();
   else
     QSMP_LOG("History") << "Playing: Unknown";
 }

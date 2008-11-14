@@ -90,6 +90,9 @@ public:
   typedef typename container_type::iterator        iterator;
   typedef typename container_type::const_iterator  const_iterator;
 
+  typedef typename container_type::reverse_iterator        reverse_iterator;
+  typedef typename container_type::const_reverse_iterator  const_reverse_iterator;
+
   SequenceTree():parent_(NULL){}
   /*implicit*/ SequenceTree(const StoredType& element):element_(element),parent_(NULL){}
   SequenceTree(const SequenceTree& r)
@@ -104,6 +107,11 @@ public:
   const_iterator    begin()const{return children_.begin();}
   iterator          end(){return children_.end();}
   const_iterator    end()const{return children_.end();}
+
+  reverse_iterator       rbegin(){return children_.rbegin();}
+  const_reverse_iterator rbegin()const{return children_.rbegin();}
+  reverse_iterator       rend(){return children_.rend();}
+  const_reverse_iterator rend()const{return children_.rend();}
 
   StoredType&       get(){return element_;}
   const StoredType& get()const{return element_;}
@@ -300,26 +308,24 @@ QModelIndex TreeModel<TreeRange,TreeMap>::parent(const QModelIndex& index)const
 {
   QSMP_PROFILE(parent)
   Pointer p = GetNode(index);
-  if(p)
-  {
-    Pointer parent_p = map_.parent(*p);
-    if(parent_p)
-    {
-      Range range = map_.child_range(*parent_p);
-      if (boost::begin(range) == boost::begin(range_))
-        return QModelIndex();
-      Iterator location = map_.location(*p);
-      return createIndex(std::distance(boost::begin(range),location),0,reinterpret_cast<void*>(p));
-    }
-    else
-    {
-      return QModelIndex();
-    }
-  }
-  else
-  {
+  if(!p)
     return QModelIndex();
-  }
+
+  Pointer parent_p = map_.parent(*p);
+  if(!parent_p)
+    return QModelIndex();
+
+  //In order to find the row of parent_p we must find the range that it sits in
+  //thus we need to find the child range of parent_parent_p
+  Pointer parent_parent_p = map_.parent(*parent_p);
+  if (!parent_parent_p)
+    return QModelIndex();
+
+  Range   parent_p_siblings = map_.child_range(*parent_parent_p);
+  Iterator location = map_.location(*parent_p);
+  size_t row = std::distance(boost::begin(parent_p_siblings),location);
+
+  return createIndex(row,0,reinterpret_cast<void*>(parent_p));
 }
 
 //-----------------------------------------------------------------------------
@@ -427,23 +433,24 @@ struct ViewEntryMap
 };
 
 //-----------------------------------------------------------------------------
+typedef SequenceTree<std::vector,ViewEntry> ViewSelectorNode;
 
-class ViewSelector : public QListView
+class ViewSelector : public QTreeView
 {
 public:
   ViewSelector(QWidget* parent_widget);
 
-  void AddViewEntry(boost::function<QLayout* ()> new_view,
-                    const std::string&           text);
+  ViewSelectorNode* AddViewEntry(boost::function<QLayout* ()> new_view,
+                                 QString                      text,
+                                 ViewSelectorNode*            parent = NULL);
 private:
-  typedef SequenceTree<std::vector,ViewEntry> Tree;
-  typedef TreeModel<boost::iterator_range<Tree::iterator>,
-                    SequenceTreeMap<Tree,ViewEntryMap> > Model;
+  typedef TreeModel<boost::iterator_range<ViewSelectorNode::iterator>,
+                    SequenceTreeMap<ViewSelectorNode,ViewEntryMap> > Model;
 
-  void  EntryDoubleClicked(const Tree& node);
-  Tree& tree(){return tree_;}
+  void  ActivateEntry(const ViewSelectorNode& node);
+  ViewSelectorNode& tree(){return tree_;}
 
-  Tree      tree_;
+  ViewSelectorNode      tree_;
   QWidget*  parent_widget_;
   Model*    model_;
 };

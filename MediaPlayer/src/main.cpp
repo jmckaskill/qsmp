@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
+#include <ctime>
 #include <iostream>
 #include <qsmp/HotkeyWindow.h>
 #include <qsmp/Log.h>
@@ -29,9 +30,10 @@
 #include <qsmp/PlaylistView.h>
 #include <qsmp/utilities.h>
 #include <qsmp/ViewSelector.h>
-#include <QtGui/qapplication.h>
 #include <QtCore/qobject.h>
+#include <QtGui/qapplication.h>
 #include <QtGui/qboxlayout.h>
+#include <QtGui/qsplitter.h>
 #include <string>
 #include <tbb/task_scheduler_init.h>
 #include <vector>
@@ -50,9 +52,9 @@ int main(int argc, char **argv)
   {
     qInstallMsgHandler(&qsmp::QtMsgHandler);
 
-    DWORD tick = ::GetTickCount();
-    QSMP_LOG("Seed") << tick;
-    srand(tick);
+    time_t current_time = std::time(NULL);
+    QSMP_LOG("Seed") << current_time;
+    srand(current_time);
 
     tbb::task_scheduler_init init;
     QApplication app(argc, argv);
@@ -102,13 +104,15 @@ int main(int argc, char **argv)
     
     QWidget* view_widget = new QWidget;
     ViewSelector* view_selector = new ViewSelector(view_widget);
-    QHBoxLayout* view_layout = new QHBoxLayout;
 
-    view_layout->addWidget(view_selector);
-    view_layout->addWidget(view_widget);
+    QSplitter* view_splitter = new QSplitter;
+    QLayout*  view_layout = new QHBoxLayout;
+    view_splitter->addWidget(view_selector);
+    view_splitter->addWidget(view_widget);
+    view_layout->addWidget(view_splitter);
 
-    view_selector->AddViewEntry(history_view, "History");
-    view_selector->AddViewEntry(playlist_view, "Playlist");
+    ViewSelectorNode* node = view_selector->AddViewEntry(history_view, "History");
+    view_selector->AddViewEntry(playlist_view, "Playlist",node);
 
     HotkeyWindow window;
     window.setLayout(view_layout);

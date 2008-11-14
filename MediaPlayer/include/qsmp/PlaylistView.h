@@ -20,7 +20,7 @@
 
 #include <qsmp/common.h>
 #include <qsmp/Player.h>
-#include <QtCore/qdatetime.h.>
+#include <QtCore/qdatetime.h>
 #include <QtGui/qwidget.h>
 
 

@@ -31,26 +31,31 @@ ViewSelector::ViewSelector(QWidget* parent_widget)
 : parent_widget_(parent_widget)
 {
   model_ = new Model(boost::bind(&ViewSelector::tree,this));
-  model_->set_clicked(boost::bind(&ViewSelector::EntryDoubleClicked,this,_1));
+  model_->set_clicked(boost::bind(&ViewSelector::ActivateEntry,this,_1));
   model_->SetView(this);
   setModel(model_);
 }
 
 //-----------------------------------------------------------------------------
 
-void ViewSelector::AddViewEntry(boost::function<QLayout* ()> new_view,
-                                const std::string&           text)
+ViewSelectorNode* ViewSelector::AddViewEntry(boost::function<QLayout* ()> new_view,
+                                             QString                      text,
+                                             ViewSelectorNode*            parent)
 {
+  if (!parent)
+    parent = &tree_;
+
   ViewEntry view;
   view.new_view_ = new_view;
-  view.text_     = QString::fromStdString(text);
-  tree_.push_back(view);
+  view.text_     = text;
+  parent->push_back(view);
   model_->reset();
+  return &*parent->rbegin();
 }
 
 //-----------------------------------------------------------------------------
 
-void ViewSelector::EntryDoubleClicked(const ViewSelector::Tree& node)
+void ViewSelector::ActivateEntry(const ViewSelectorNode& node)
 {
   delete parent_widget_->layout();
   parent_widget_->setLayout(node.get().new_view_());

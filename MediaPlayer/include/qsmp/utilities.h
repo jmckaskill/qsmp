@@ -51,12 +51,18 @@ class Metadata
 public:
   template<class Path>
   Metadata(const boost::filesystem::basic_directory_entry<Path>& dir)
-    : path_(dir.path()),
+    : path_(QString::fromStdString(dir.path().file_string())),
       queue_index_(-1)
   {
     init();
   }
   Metadata(const boost::filesystem::path& path)
+    : path_(QString::fromStdString(path.file_string())),
+      queue_index_(-1)
+  {
+    init();
+  }
+  Metadata(const QString& path)
     : path_(path),
       queue_index_(-1)
   {
@@ -75,8 +81,8 @@ public:
     }
 #endif
   }
-  std::string artist_;
-  boost::filesystem::path path_;
+  QString artist_;
+  QString path_;
   int  queue_index_;
 };
 
@@ -91,16 +97,16 @@ public:
   {}
 
   template<class Path>
-  Media(const Path& path)
-    : metadata_(new Metadata(path))
+  Media(const boost::filesystem::basic_directory_entry<Path>& dir)
+    : metadata_(new Metadata(dir))
   {}
 
   bool  valid()const{return metadata_.get() != NULL;}
-  const std::string&              artist()const{return metadata_->artist_;}
-  const boost::filesystem::path&  path()const{return metadata_->path_;}
-  uint               queue_index()const{return metadata_->queue_index_;}
-  void               set_queue_index(uint index){metadata_->queue_index_ = index;}
-  bool               current()const{return metadata_->queue_index_ == 0;}
+  QString  artist()const{return metadata_->artist_;}
+  QString  path()const{return metadata_->path_;}
+  uint     queue_index()const{return metadata_->queue_index_;}
+  void     set_queue_index(uint index){metadata_->queue_index_ = index;}
+  bool     current()const{return metadata_->queue_index_ == 0;}
 private:
   boost::shared_ptr<Metadata> metadata_;
 };
@@ -110,7 +116,7 @@ private:
 template<class CharT, class traits>
 std::basic_ostream<CharT,traits>& operator<<(std::basic_ostream<CharT,traits>& stream, const Media& entry)
 {
-  stream << entry.path().file_string();
+  stream << entry.path();
   return stream;
 }
 
@@ -260,7 +266,7 @@ public:
     operator=(const ValueType& val)
   {
     if (pred_(val))
-      *output_ = val;
+      *output_ = ValueType(val);
     return *this;
   }
 
@@ -484,6 +490,18 @@ struct ScopeProfile
     ticks = 0;\
     i = 0;\
   }
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+template<class CharT, class traits>
+std::basic_ostream<CharT,traits>& operator<<(std::basic_ostream<CharT,traits>& stream, const QString& string)
+{
+  QByteArray utf8 = string.toUtf8();
+  stream << utf8.data();
+  return stream;
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

@@ -59,10 +59,10 @@ QVariant PlaylistModel<RangeFunction>::data(const QModelIndex &index, int role /
       }
       break;
     case 1:
-      ret = QString::fromStdString(ii->path().file_string());
+      ret = ii->path();
       break;
     case 2:
-      ret = QString::fromStdString(ii->artist());
+      ret = ii->artist();
       break;
     default:
       break;
