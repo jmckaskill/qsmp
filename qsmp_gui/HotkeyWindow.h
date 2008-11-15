@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2008 James McKaskill <jmckaskill@gmail.com>                  *
+ * Copyright (C) 2008 Tim Boundy <gigaplex@gmail.com>                         *
  *                                                                            *
  * This program is free software; you can redistribute it and/or              *
  * modify it under the terms of the GNU General Public License as             *
@@ -15,25 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.      *
  ******************************************************************************/
 
-#ifndef QSMP_PLAYLISTVIEW_H_
-#define QSMP_PLAYLISTVIEW_H_
+#ifndef QSMP_HOTKEYWINDOW_H_
+#define QSMP_HOTKEYWINDOW_H_
 
-#include <qsmp/common.h>
-#include <qsmp/Player.h>
-#include <QtCore/qdatetime.h>
+
+#include "qsmp_gui/common.h"
 #include <QtGui/qwidget.h>
-
-
-namespace Phonon {
-class SeekSlider;
-class VolumeSlider;
-}
-class QAbstractItemModel;
-class QLabel;
-class QPushButton;
-class QSortFilterProxyModel;
-class QTreeView;
-
 
 QSMP_BEGIN
 
@@ -41,41 +28,27 @@ QSMP_BEGIN
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-class PlaylistView : public QWidget
-{
-public:
-  PlaylistView();
-  PlaylistView(QAbstractItemModel* model);
-
-  void SetModel(QAbstractItemModel* model);
-
-private:
-  void Init();
-  QTreeView* view_;
-  //QSortFilterProxyModel* proxy_;
-};
-
-//-----------------------------------------------------------------------------
-
-class PlayerControl : public QWidget
+class HotkeyWindow : public QWidget
 {
   Q_OBJECT
 public:
-  PlayerControl(Player* player, PlayerHistory* history);
+  HotkeyWindow();
+  virtual ~HotkeyWindow();
 
-public Q_SLOTS:
-  void Progress(QTime progress, QTime total);
-  void Status(PlayerState state);
+  bool RegisterHotkeys();
+  bool UnregisterHotkeys();
+
+protected:
+  bool winEvent(MSG* message, long* result);
+
+Q_SIGNALS:
+  void OnPrevious();
+  void OnNext();
+  void OnPlayPause();
+  void OnStop();
 
 private:
-  Player*       player_;
-  Phonon::SeekSlider*   progress_;
-  Phonon::VolumeSlider* volume_;
-  QLabel*       progress_text_;
-  QPushButton*  play_pause_;
-  QPushButton*  next_;
-  QPushButton*  previous_;
-  QPushButton*  stop_;
+  bool registered_hotkeys_;
 };
 
 //-----------------------------------------------------------------------------
@@ -84,4 +57,4 @@ private:
 
 QSMP_END
 
-#endif
+#endif /*QSMP_HOTKEYWINDOW_H_*/

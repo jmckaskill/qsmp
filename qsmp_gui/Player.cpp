@@ -16,11 +16,11 @@
  ******************************************************************************/
 
 #include "stdafx.h"
-#include <qsmp/Player.h>
-#include <qsmp/Player.moc>
+#include <qsmp_gui/Player.h>
+#include <qsmp_gui/Player.moc>
 
-#include <qsmp/Log.h>
-#include <qsmp/utilities.h>
+#include <qsmp_gui/Log.h>
+#include <qsmp_gui/utilities.h>
 
 
 QSMP_BEGIN

@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright (C) 2008 Tim Boundy <gigaplex@gmail.com>                         *
+ * Copyright (C) 2008 James McKaskill <jmckaskill@gmail.com>                  *
  *                                                                            *
  * This program is free software; you can redistribute it and/or              *
  * modify it under the terms of the GNU General Public License as             *
@@ -15,12 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.      *
  ******************************************************************************/
 
-#ifndef QSMP_HOTKEYWINDOW_H_
-#define QSMP_HOTKEYWINDOW_H_
+#include "stdafx.h"
 
-
-#include "qsmp/common.h"
-#include <QtGui/qwidget.h>
+#include <boost/bind.hpp>
+#include <qsmp_gui/ViewSelector.h>
+#include <qsmp_gui/ViewSelector.moc>
 
 QSMP_BEGIN
 
@@ -28,33 +27,42 @@ QSMP_BEGIN
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-class HotkeyWindow : public QWidget
+ViewSelector::ViewSelector(QWidget* parent_widget)
+: parent_widget_(parent_widget)
 {
-  Q_OBJECT
-public:
-  HotkeyWindow();
-  virtual ~HotkeyWindow();
+  model_ = new Model(boost::bind(&ViewSelector::tree,this));
+  model_->set_clicked(boost::bind(&ViewSelector::ActivateEntry,this,_1));
+  model_->SetView(this);
+  setModel(model_);
+}
 
-  bool RegisterHotkeys();
-  bool UnregisterHotkeys();
+//-----------------------------------------------------------------------------
 
-protected:
-  bool winEvent(MSG* message, long* result);
+ViewSelectorNode* ViewSelector::AddViewEntry(boost::function<QLayout* ()> new_view,
+                                             QString                      text,
+                                             ViewSelectorNode*            parent)
+{
+  if (!parent)
+    parent = &tree_;
 
-Q_SIGNALS:
-  void OnPrevious();
-  void OnNext();
-  void OnPlayPause();
-  void OnStop();
+  ViewEntry view;
+  view.new_view_ = new_view;
+  view.text_     = text;
+  parent->push_back(view);
+  model_->reset();
+  return &*parent->rbegin();
+}
 
-private:
-  bool registered_hotkeys_;
-};
+//-----------------------------------------------------------------------------
+
+void ViewSelector::ActivateEntry(const ViewSelectorNode& node)
+{
+  delete parent_widget_->layout();
+  parent_widget_->setLayout(node.get().new_view_());
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
 QSMP_END
-
-#endif /*QSMP_HOTKEYWINDOW_H_*/

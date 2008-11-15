@@ -23,9 +23,9 @@
 #include <boost/function.hpp>
 #include <boost/range.hpp>
 #include <boost/static_assert.hpp>
-#include <qsmp/common.h>
-#include <qsmp/Log.h>
-#include <qsmp/utilities.h>
+#include <qsmp_gui/common.h>
+#include <qsmp_gui/Log.h>
+#include <qsmp_gui/utilities.h>
 #include <QtCore/qabstractitemmodel.h>
 #include <QtCore/qvariant.h>
 #include <tcl/sequential_tree.h>

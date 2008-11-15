@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.      *
  ******************************************************************************/
 
-#include "qsmp/common.h"
+#include "qsmp_gui/common.h"
 
 // All third party headers should go in here (even if they are used in only one file)
 // This file is then precompiled

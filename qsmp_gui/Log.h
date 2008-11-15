@@ -25,7 +25,7 @@
 #include <boost/utility/singleton.hpp>
 #include <iostream>
 #include <fstream>
-#include <qsmp/common.h>
+#include <qsmp_gui/common.h>
 #include <string>
 #include <tcl/tree.h>
 #include <utility>

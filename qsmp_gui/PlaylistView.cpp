@@ -16,10 +16,10 @@
  ******************************************************************************/
 
 #include "stdafx.h"
-#include <qsmp/PlaylistView.h>
-#include <qsmp/PlaylistView.moc>
+#include <qsmp_gui/PlaylistView.h>
+#include <qsmp_gui/PlaylistView.moc>
 
-#include "qsmp/Player.h"
+#include "qsmp_gui/Player.h"
 #include <phonon/seekslider.h>
 #include <phonon/volumeslider.h>
 #include <QtCore/qabstractitemmodel.h>

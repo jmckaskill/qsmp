@@ -15,11 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.      *
  ******************************************************************************/
 
-#include "stdafx.h"
+#ifndef QSMP_PLAYLISTVIEW_H_
+#define QSMP_PLAYLISTVIEW_H_
 
-#include <boost/bind.hpp>
-#include <qsmp/ViewSelector.h>
-#include <qsmp/ViewSelector.moc>
+#include <qsmp_gui/common.h>
+#include <qsmp_gui/Player.h>
+#include <QtCore/qdatetime.h>
+#include <QtGui/qwidget.h>
+
+
+namespace Phonon {
+class SeekSlider;
+class VolumeSlider;
+}
+class QAbstractItemModel;
+class QLabel;
+class QPushButton;
+class QSortFilterProxyModel;
+class QTreeView;
+
 
 QSMP_BEGIN
 
@@ -27,42 +41,47 @@ QSMP_BEGIN
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-ViewSelector::ViewSelector(QWidget* parent_widget)
-: parent_widget_(parent_widget)
+class PlaylistView : public QWidget
 {
-  model_ = new Model(boost::bind(&ViewSelector::tree,this));
-  model_->set_clicked(boost::bind(&ViewSelector::ActivateEntry,this,_1));
-  model_->SetView(this);
-  setModel(model_);
-}
+public:
+  PlaylistView();
+  PlaylistView(QAbstractItemModel* model);
+
+  void SetModel(QAbstractItemModel* model);
+
+private:
+  void Init();
+  QTreeView* view_;
+  //QSortFilterProxyModel* proxy_;
+};
 
 //-----------------------------------------------------------------------------
 
-ViewSelectorNode* ViewSelector::AddViewEntry(boost::function<QLayout* ()> new_view,
-                                             QString                      text,
-                                             ViewSelectorNode*            parent)
+class PlayerControl : public QWidget
 {
-  if (!parent)
-    parent = &tree_;
+  Q_OBJECT
+public:
+  PlayerControl(Player* player, PlayerHistory* history);
 
-  ViewEntry view;
-  view.new_view_ = new_view;
-  view.text_     = text;
-  parent->push_back(view);
-  model_->reset();
-  return &*parent->rbegin();
-}
+public Q_SLOTS:
+  void Progress(QTime progress, QTime total);
+  void Status(PlayerState state);
 
-//-----------------------------------------------------------------------------
-
-void ViewSelector::ActivateEntry(const ViewSelectorNode& node)
-{
-  delete parent_widget_->layout();
-  parent_widget_->setLayout(node.get().new_view_());
-}
+private:
+  Player*       player_;
+  Phonon::SeekSlider*   progress_;
+  Phonon::VolumeSlider* volume_;
+  QLabel*       progress_text_;
+  QPushButton*  play_pause_;
+  QPushButton*  next_;
+  QPushButton*  previous_;
+  QPushButton*  stop_;
+};
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
 QSMP_END
+
+#endif

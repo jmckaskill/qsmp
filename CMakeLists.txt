@@ -11,7 +11,12 @@ project(SMP)
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/id3lib/libprj 
                  ${CMAKE_CURRENT_SOURCE_DIR}/id3lib/zlib/prj)
-add_definitions(-D_WIN32_WINNT=0x500)
+
+if(WIN32)
+	add_definitions(-D_WIN32_WINNT=0x500
+	                -D_CRT_SECURE_NO_WARNINGS
+	                -D_SCL_SECURE_NO_WARNINGS)
+endif(WIN32)
 
 set(boost_singleton_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/singleton/)
 set(TCL_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/TCL/)
@@ -20,6 +25,9 @@ add_subdirectory(TCL)
 add_subdirectory(lua)
 add_subdirectory(luabind)
 add_subdirectory(id3lib)
-add_subdirectory(MediaPlayer)
 add_subdirectory(MMShellHook)
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+add_subdirectory(qsmp_gui)
+add_subdirectory(qsmp_indexer)
 

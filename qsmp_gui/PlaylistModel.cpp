@@ -16,5 +16,5 @@
  ******************************************************************************/
 
 #include "stdafx.h"
-#include <qsmp/PlaylistModel.h>
-#include <qsmp/PlaylistModel.moc>
+#include <qsmp_gui/PlaylistModel.h>
+#include <qsmp_gui/PlaylistModel.moc>

@@ -24,8 +24,8 @@
 #include <phonon/audiooutput.h>
 #include <phonon/mediaobject.h>
 #include <phonon/path.h>
-#include <qsmp/common.h>
-#include <qsmp/utilities.h>
+#include <qsmp_gui/common.h>
+#include <qsmp_gui/utilities.h>
 #include <QtCore/qdatetime.h>
 #include <QtCore/qobject.h>
 

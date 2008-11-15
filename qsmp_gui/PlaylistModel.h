@@ -15,81 +15,69 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.      *
  ******************************************************************************/
 
-#ifndef QSMP_LUATCPCONSOLE
-#define QSMP_LUATCPCONSOLE
+#ifndef QSMP_PLAYLISTMODEL_H_
+#define QSMP_PLAYLISTMODEL_H_
 
-
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
-#include <lua.h>
-#include <qsmp/common.h>
-#include <QtCore/qobject.h>
-#include <QtNetwork/qtcpsocket.h>
-#include <QtNetwork/qtcpserver.h>
-#include <string>
-#include <vector>
-
-
-#define QSMP_LUA_CONSOLE_PORT 12345
-
+#include <qsmp_gui/common.h>
+#include <QtCore/qabstractitemmodel.h>
+#include <QtCore/qnamespace.h>
+#include <QtCore/qstring.h>
+#include <QtCore/qvariant.h>
 
 QSMP_BEGIN
 
-class LuaTcpSocket;
-
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-class LuaTcpServer : public QObject
+class PlaylistModelBase : public QAbstractTableModel
 {
   Q_OBJECT
-public:
-  LuaTcpServer();
-private Q_SLOTS:
-  void onNewConnection();
-private:
-  void onDisconnect(boost::shared_ptr<LuaTcpSocket> socket);
-  QTcpServer server_;
-  std::vector<boost::shared_ptr<LuaTcpSocket> > sockets_;
+public Q_SLOTS:
+  virtual void onDoubleClicked(const QModelIndex& index)=0;
+  virtual void Reset()=0;
+Q_SIGNALS:
+  void itemSelected(QString path);
 };
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-int LuaTcpSocket_Print(lua_State* l);
-int LuaTcpSocket_RawInput(lua_State* l);
+template<class RangeFunction>
+class PlaylistModel : public PlaylistModelBase
+{
+public:
+  PlaylistModel(RangeFunction get_entries);
+  virtual int      rowCount(const QModelIndex& parent = QModelIndex())const;
+  virtual int      columnCount(const QModelIndex& parent = QModelIndex())const;
+  virtual QVariant data(const QModelIndex &index, int role  = Qt::DisplayRole)const;
+
+  virtual void sort(int column, Qt::SortOrder order = Qt::AscendingOrder);
+  virtual void Reset()
+  {
+    entries_ = get_entries_();
+    QAbstractTableModel::reset();
+  }
+  virtual void onDoubleClicked(const QModelIndex& index);
+private:
+  typedef typename RangeFunction::result_type Range;
+  RangeFunction get_entries_;
+  Range         entries_;
+};
 
 //-----------------------------------------------------------------------------
 
-class LuaTcpSocket : public QObject
-{
-  Q_OBJECT
-public:
-  LuaTcpSocket(QTcpSocket* socket, boost::function<void ()> disconnect_callback);
-  ~LuaTcpSocket();
-private Q_SLOTS:
-  void onDisconnect(){disconnect_callback_();}
-  void onReadyRead();
-private:
-  friend int LuaTcpSocket_Print(lua_State* l);
-  friend int LuaTcpSocket_RawInput(lua_State* l);
-  void write(const char* buf, size_t len){socket_->write(buf,len);}
-  void write(const char* str){socket_->write(str,strlen(str));}
-  lua_State*                    lua_;
-  boost::scoped_ptr<QTcpSocket> socket_;
-  boost::function0<void>        disconnect_callback_;
-  typedef std::vector<char> read_buffer_t;
-  read_buffer_t                 read_buffer_;
-  std::string                   terminator_;
-};
+template<class RangeFunction>
+boost::shared_ptr<PlaylistModel<RangeFunction> > NewPlaylist(RangeFunction function)
+{return boost::shared_ptr<PlaylistModel<RangeFunction> >(new PlaylistModel<RangeFunction>(function));}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
 QSMP_END
+
+#include "PlaylistModel.inl"
 
 #endif

@@ -24,7 +24,7 @@
 #include <boost/shared_ptr.hpp>
 #include <iterator>
 #include <ostream>
-#include <qsmp/common.h>
+#include <qsmp_gui/common.h>
 #include <QtCore/qnamespace.h>
 #include <string>
 

@@ -1,4 +1,4 @@
-project(qsmp)
+project(qsmp_gui)
 
 set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost COMPONENTS filesystem system thread date_time)
@@ -30,35 +30,33 @@ set(QT_USE_QTNETWORK 1)
 find_package(Qt4)
 include(${QT_USE_FILE})
 
-set(ui ui/untitled.ui)
-set(headers include/qsmp/common.h
-            include/qsmp/utilities.h
-            include/qsmp/PlaylistModel.inl
-            include/qsmp/PlaylistModel.h
-            include/qsmp/Log.h
-            include/qsmp/LuaTcpConsole.h
-            include/qsmp/Player.h
-            include/qsmp/ViewSelector.h
-            include/qsmp/PlaylistView.h
-            include/qsmp/HotkeyWindow.h
-            src/stdafx.h)
-set(sources src/main.cpp
-            src/LuaTcpConsole.cpp
-            src/Player.cpp
-            src/Log.cpp
-            src/PlaylistView.cpp
-            src/HotkeyWindow.cpp
-            src/PlaylistModel.cpp
-            src/ViewSelector.cpp
-            src/stdafx.cpp)
+set(headers common.h
+            utilities.h
+            PlaylistModel.inl
+            PlaylistModel.h
+            Log.h
+            LuaTcpConsole.h
+            Player.h
+            ViewSelector.h
+            PlaylistView.h
+            HotkeyWindow.h
+            stdafx.h)
+set(sources qsmp_gui.cpp
+            LuaTcpConsole.cpp
+            Player.cpp
+            Log.cpp
+            PlaylistView.cpp
+            HotkeyWindow.cpp
+            PlaylistModel.cpp
+            ViewSelector.cpp
+            stdafx.cpp)
 
 qsmp_qt4_automoc(${sources})
-qt4_wrap_ui(moc_sources ${ui})
-add_executable(qsmp ${sources} ${headers} ${ui})
+add_executable(qsmp_gui ${sources} ${headers} ${ui})
 
-set_precompiled_header(qsmp stdafx.h src/stdafx.cpp)
+set_precompiled_header(qsmp_gui stdafx.h stdafx.cpp)
 
-target_link_libraries(qsmp 
+target_link_libraries(qsmp_gui 
                       ${QT_LIBRARIES}
                       ${Boost_LIBRARIES}
                       ${TBB_LIBRARIES}

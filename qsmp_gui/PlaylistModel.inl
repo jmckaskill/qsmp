@@ -19,7 +19,7 @@
 #define QSMP_PLAYLISTMODEL_INL_
 
 #include <boost/range.hpp>
-#include <qsmp/utilities.h>
+#include <qsmp_gui/utilities.h>
 #include <QtCore/qstring.h>
 #include <string>
 

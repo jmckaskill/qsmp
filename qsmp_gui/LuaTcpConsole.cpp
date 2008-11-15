@@ -16,8 +16,8 @@
  ******************************************************************************/
 
 #include "stdafx.h"
-#include <qsmp/LuaTcpConsole.h>
-#include <qsmp/LuaTcpConsole.moc>
+#include <qsmp_gui/LuaTcpConsole.h>
+#include <qsmp_gui/LuaTcpConsole.moc>
 
 QSMP_BEGIN
 

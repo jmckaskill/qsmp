@@ -16,7 +16,7 @@
  ******************************************************************************/
 
 #include "stdafx.h"
-#include <qsmp/Log.h>
+#include <qsmp_gui/Log.h>
 
 #include <afx.h>
 
