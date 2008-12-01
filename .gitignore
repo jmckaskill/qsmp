@@ -4,7 +4,9 @@ build*
 *.suo
 *.old
 *.wwdb
+*.obj
 Debug
+Release
 id3lib/config.h
 *~
 *.swp

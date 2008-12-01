@@ -27,7 +27,10 @@ add_subdirectory(luabind)
 add_subdirectory(id3lib)
 add_subdirectory(MMShellHook)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}
+                    ${boost_singleton_INCLUDE_DIR}
+                    ${TCL_INCLUDE_DIR})
+add_subdirectory(qsmp_lib)
 add_subdirectory(qsmp_gui)
 add_subdirectory(qsmp_indexer)
 

@@ -18,7 +18,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#ifdef _WIN32
+#ifdef WIN32
 
 //#ifndef _UNICODE
 //#define _UNICODE
@@ -33,6 +33,8 @@
 
 #define _AFXDLL
 
+#define NOMINMAX
+
 #endif
 
 #define QSMP_BEGIN namespace qsmp {
@@ -41,5 +43,21 @@
   private:  \
     class_name(const class_name&);  \
     class_name& operator=(const class_name&);
+
+typedef signed char int8_t;
+typedef unsigned char uint8_t;
+
+namespace boost
+{
+  namespace filesystem{}
+  namespace iostreams{}
+  template<class T> class shared_ptr;
+}
+QSMP_BEGIN
+namespace fs = ::boost::filesystem;
+namespace io = ::boost::iostreams;
+using boost::shared_ptr;
+QSMP_END
+
 
 #endif

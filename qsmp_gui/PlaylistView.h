@@ -20,6 +20,7 @@
 
 #include <qsmp_gui/common.h>
 #include <qsmp_gui/Player.h>
+#include <qsmp_gui/TreeModel.h>
 #include <QtCore/qdatetime.h>
 #include <QtGui/qwidget.h>
 
@@ -41,20 +42,67 @@ QSMP_BEGIN
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-class PlaylistView : public QWidget
+class HistoryModel;
+
+//-----------------------------------------------------------------------------
+
+class HistoryModelNode : public Model::TreeModelNode<HistoryModelNode, HistoryModel>
 {
 public:
-  PlaylistView();
-  PlaylistView(QAbstractItemModel* model);
+  HistoryModelNode(HistoryModel* model)
+    : TreeModelNode(model)
+  {}
 
-  void SetModel(QAbstractItemModel* model);
+  int       columnCount()const{return 2;}
+  QVariant  data(int column, int role)const;
 
 private:
-  void Init();
-  QTreeView* view_;
-  //QSortFilterProxyModel* proxy_;
+  friend class HistoryModel;
+  QString   queue_field_;
+  Media     media_;
 };
 
+//-----------------------------------------------------------------------------
+
+class HistoryModel : public Model::TreeModel<HistoryModelNode, HistoryModel>
+{
+  Q_OBJECT
+public:
+  HistoryModel(PlayerHistory* history, size_t back_cache, size_t forward_cache);
+
+public Q_SLOTS:
+  void  HistoryInsert(int begin, const Media& media);
+  void  HistoryRemove(int begin);
+
+  void  QueueInsert(int begin, const Media& media);
+  void  QueueRemove(int begin);
+
+  void  CacheInsert(int begin, const Media& media);
+  void  CacheRemove(int begin);
+  void  CacheReset();
+
+  void  DoubleClicked(const QModelIndex& index);
+private:
+  void              CheckCache();
+  int               queue_size_;
+  int               current_;
+  PlayerHistory*    history_;
+  size_t            back_cache_;
+  size_t            forward_cache_;
+};
+
+//-----------------------------------------------------------------------------
+
+class HistoryView : public QTreeView
+{
+public:
+  HistoryView(PlayerHistory* history);
+private:
+  HistoryModel model_;
+};
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
 class PlayerControl : public QWidget

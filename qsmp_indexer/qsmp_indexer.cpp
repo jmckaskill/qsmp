@@ -24,6 +24,7 @@
 #include <iterator>
 #include <iostream>
 #include <string>
+#include <string.h>
 #ifdef WIN32
 #include <fcntl.h> //for _O_BINARY
 #include <io.h>    //for _setmode
@@ -197,7 +198,6 @@ std::basic_ostream<CharT,traits>& operator<<(std::basic_ostream<CharT,traits>& s
   return stream;
 }
 
-#define QSMPINDEXER_PRINT_OUTPUT
 
 void set_id3_metadata(const char* path,
                       const char* frame,
@@ -205,37 +205,35 @@ void set_id3_metadata(const char* path,
                       const char* field,
                       const char* data)
 {
-#ifdef QSMPINDEXER_PRINT_OUTPUT 
   std::cout << "M 644 inline " << "files/" << path 
-            << "/id3/" << frame << "/" << count << "/" << field
-            << "\n"
-            << "data " << std::strlen(data) << "\n"
-            << data << "\n";
-#endif
+            << "/id3/" << frame << '/' << count << '/' << field
+            << '\n'
+            << "data " << std::strlen(data) << '\n'
+            << data << '\n';
 }
 
 void set_main_metadata(const char* path,
                        const char* type,
                        const char* data)
 {
-#ifdef QSMPINDEXER_PRINT_OUTPUT
   std::cout << "M 644 inline " << "files/" << path << "/"
             << type << "\n"
             << "data " << std::strlen(data) << "\n"
             << data << "\n";
-#endif
 }
 
 void set_sort_metadata(const char* path,
                        const char* sort_type,
                        const char* sort_data)
 {
-#ifdef QSMPINDEXER_PRINT_OUTPUT 
   std::cout << "C \"" << "files/" << path << "\" "
             << "sort1/" 
-            << sort_type << "/"
-            << sort_data << "\n";
-#endif
+            << sort_type << '/';
+
+  if (strlen(sort_data) > 0)
+    std::cout << sort_data << '\n';
+  else
+    std::cout << "Unknown" << '\n';
 }
 
 void set_sort_metadata(const char* path,
@@ -244,14 +242,20 @@ void set_sort_metadata(const char* path,
                        const char* sort_type_2,
                        const char* sort_data_2)
 {
-#ifdef QSMPINDEXER_PRINT_OUTPUT 
   std::cout << "C \"" << "files/" << path << "\" "
             << "sort2/" 
-            << sort_type_1 << "/"
-            << sort_data_1 << "/"
-            << sort_type_2 << "/"
-            << sort_data_2 << "\n";
-#endif
+            << sort_type_1 << '/'
+            << sort_type_2 << '/';
+
+  if (strlen(sort_data_1) > 0)
+    std::cout << sort_data_1 << '/';
+  else
+    std::cout << "Unknown" << '/';
+
+  if (strlen(sort_data_2) > 0)
+    std::cout << sort_data_2 << '\n';
+  else
+    std::cout << "Unknown" << '\n';
 }
 
 void set_sort_metadata(const char* path,
@@ -262,16 +266,26 @@ void set_sort_metadata(const char* path,
                        const char* sort_type_3,
                        const char* sort_data_3)
 {
-#ifdef QSMPINDEXER_PRINT_OUTPUT 
   std::cout << "C \"" << "files/" << path << "\" "
             << "sort3/" 
-            << sort_type_1 << "/"
-            << sort_data_1 << "/"
-            << sort_type_2 << "/"
-            << sort_data_2 << "/"
-            << sort_type_3 << "/"
-            << sort_data_3 << "\n";
-#endif
+            << sort_type_1 << '/'
+            << sort_type_2 << '/'
+            << sort_type_3 << '/';
+
+  if (strlen(sort_data_1) > 0)
+    std::cout << sort_data_1 << '/';
+  else
+    std::cout << "Unknown" << '/';
+
+  if (strlen(sort_data_2) > 0)
+    std::cout << sort_data_2 << '/';
+  else
+    std::cout << "Unknown" << '/';
+
+  if (strlen(sort_data_3) > 0)
+    std::cout << sort_data_3 << '\n';
+  else
+    std::cout << "Unknown" << '\n';
 }
 
 struct PrintMetadata
@@ -348,6 +362,9 @@ struct PrintMetadata
       frame_count[frame_id]++;
       //delete frame_iterator;
     }
+    std::replace(const_cast<char*>(title), const_cast<char*>(title + strlen(title)), '/', '_');
+    std::replace(const_cast<char*>(artist), const_cast<char*>(artist + strlen(artist)), '/', '_');
+    std::replace(const_cast<char*>(album), const_cast<char*>(album + strlen(album)), '/', '_');
     //delete tag_iterator;
     set_main_metadata(stripped_path,
                       "artist",artist);

@@ -41,7 +41,7 @@ PlaylistModel<RangeFunction>::PlaylistModel(RangeFunction get_entries)
 template<class RangeFunction>
 QVariant PlaylistModel<RangeFunction>::data(const QModelIndex &index, int role /* = Qt::DisplayRole */)const 
 {
-  QSMP_PROFILE(PlaylistModel::data)
+  //QSMP_PROFILE(PlaylistModel::data)
   QVariant ret;
   if (role == Qt::DisplayRole &&
       index.row() < boost::distance(entries_))

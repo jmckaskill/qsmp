@@ -121,7 +121,7 @@
 				AdditionalIncludeDirectories=".\,..\,..\include,..\include\id3,..\zlib\include"
 				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;_WINDOWS;HAVE_CONFIG_H;ID3LIB_LINKOPTION=1"
 				StringPooling="true"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				PrecompiledHeaderFile=".\Release/id3lib.pch"
 				AssemblerListingLocation=".\Release/"

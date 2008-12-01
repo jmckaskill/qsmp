@@ -20,24 +20,52 @@
 #include <algorithm>
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/iostreams/device/file_descriptor.hpp>
+#include <boost/iostreams/stream.hpp>
 #include <ctime>
 #include <iostream>
+#include <qsmp_gui/Cache.h>
+#include <qsmp_gui/CacheModel.h>
 #include <qsmp_gui/HotkeyWindow.h>
-#include <qsmp_gui/Log.h>
 #include <qsmp_gui/LuaTcpConsole.h>
 #include <qsmp_gui/PlaylistModel.h>
 #include <qsmp_gui/Player.h>
 #include <qsmp_gui/PlaylistView.h>
+#include <qsmp_gui/Process.h>
 #include <qsmp_gui/utilities.h>
 #include <qsmp_gui/ViewSelector.h>
+#include <qsmp_lib/Log.h>
 #include <QtCore/qobject.h>
 #include <QtGui/qapplication.h>
 #include <QtGui/qboxlayout.h>
 #include <QtGui/qsplitter.h>
 #include <string>
-#include <tbb/task_scheduler_init.h>
 #include <vector>
 #include <windows.h>
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+void QsmpQtMsgHandler(QtMsgType type, const char* buf)
+{
+  using namespace qsmp;
+  static LogContext context("Qt");
+  switch(type)
+  {
+  case QtDebugMsg:
+    LOG(context) << buf;
+    break;
+  case QtWarningMsg:
+    WARNING(context) << buf;
+    break;
+  case QtCriticalMsg:
+  case QtFatalMsg:
+    FATAL(context) << buf;
+    break;
+  }
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -48,20 +76,20 @@ int main(int argc, char **argv)
   using namespace qsmp;
   using boost::bind;
   using boost::filesystem::recursive_directory_iterator;
-  try
-  {
-    qInstallMsgHandler(&qsmp::QtMsgHandler);
+  namespace io = boost::iostreams;
+    qInstallMsgHandler(&QsmpQtMsgHandler);
 
     time_t current_time = std::time(NULL);
-    QSMP_LOG("Seed") << current_time;
+    LOG("Seed") << current_time;
     srand(current_time);
 
-    tbb::task_scheduler_init init;
     QApplication app(argc, argv);
     app.setApplicationName("SMPMediaPlayer");
     app.setApplicationVersion("0.0.1");
     app.setOrganizationName("Foobar NZ");
     app.setOrganizationDomain("foobar.co.nz");
+
+    Cache::lease();
 
     std::string path = (argc > 1) ? argv[1] : "";
 
@@ -77,42 +105,26 @@ int main(int argc, char **argv)
     sort(paths,MetadataType_FileName,SortingOrder_Ascending);
 
     typedef boost::iterator_range<std::vector<Media>::iterator> Range_t;
-    typedef PlaylistModel<Range_t> Model_t;
-    typedef boost::iterator_range<PlayerHistory::const_cache_iterator> HistoryRange_t;
-    typedef PlaylistModel<HistoryRange_t> HistoryModel_t;
 
     PlayerHistory history;
-    Player player(bind(&PlayerHistory::PlayerNext,&history));
+    Player player(bind(&PlayerHistory::GetPlayerNext,&history));
     history.SetNextCallback(bind(&chooseRandom<Range_t>,boost::ref(paths)));
     history.SetPlayer(&player);
 
-    //Model_t model(paths);
-    boost::shared_ptr<PlaylistModelBase> model = NewPlaylist(bind(Construct<HistoryRange_t>(),
-                                                                  bind(&PlayerHistory::begin,&history,5),
-                                                                  bind(&PlayerHistory::end,&history,15)));
-    QObject::connect(&history, SIGNAL(OnHistoryUpdated()), model.get(), SLOT(Reset()));
-
-    boost::function<QLayout* ()> history_view 
-      = bind(NewLayout<QVBoxLayout>(),
-             bind(New<PlaylistView>(),model.get()),
-             bind(New<PlayerControl>(),&player,&history));
-
-    boost::function<QLayout* ()> playlist_view
-      = bind(NewLayout<QVBoxLayout>(),
-             bind(New<PlaylistView>(),model.get()),
-             bind(New<PlayerControl>(),&player,&history));
-    
-    QWidget* view_widget = new QWidget;
-    ViewSelector* view_selector = new ViewSelector(view_widget);
-
     QSplitter* view_splitter = new QSplitter;
     QLayout*  view_layout = new QHBoxLayout;
-    view_splitter->addWidget(view_selector);
-    view_splitter->addWidget(view_widget);
-    view_layout->addWidget(view_splitter);
+    QWidget*  dummy_view_widget = new QWidget;
+    QLayout*  dummy_view_layout = new QVBoxLayout;
+    ViewTree* views = new ViewTree(dummy_view_layout);
 
-    ViewSelectorNode* node = view_selector->AddViewEntry(history_view, "History");
-    view_selector->AddViewEntry(playlist_view, "Playlist",node);
+    view_layout->addWidget(view_splitter);
+    view_splitter->addWidget(views);
+    view_splitter->addWidget(dummy_view_widget);
+    dummy_view_widget->setLayout(dummy_view_layout);
+
+    views->model()->AddNewView("History", new LayoutWidget<QVBoxLayout>(new HistoryView(&history),
+                                                                        new PlayerControl(&player, &history)));
+    views->model()->AddNewView("Cache", new CacheView("7a1e8b5b31087018f993cfd39e104d33344fe86b"));
 
     HotkeyWindow window;
     window.setLayout(view_layout);
@@ -132,11 +144,6 @@ int main(int argc, char **argv)
     //LuaTcpServer lua;
 
     return app.exec();
-  }
-  catch(std::exception& e)
-  {
-    qFatal("Exception: %s",e.what());
-  }
 }
 
 //-----------------------------------------------------------------------------

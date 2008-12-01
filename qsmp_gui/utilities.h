@@ -25,6 +25,7 @@
 #include <iterator>
 #include <ostream>
 #include <qsmp_gui/common.h>
+#include <qsmp_lib/Log.h>
 #include <QtCore/qnamespace.h>
 #include <string>
 
@@ -107,6 +108,9 @@ public:
   uint     queue_index()const{return metadata_->queue_index_;}
   void     set_queue_index(uint index){metadata_->queue_index_ = index;}
   bool     current()const{return metadata_->queue_index_ == 0;}
+
+  bool     operator==(const Media& r)const
+  {return metadata_ == r.metadata_;}
 private:
   boost::shared_ptr<Metadata> metadata_;
 };
@@ -404,6 +408,30 @@ struct NewLayout
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
+template<class QtLayout>
+class LayoutWidget : public QWidget
+{
+public:
+  LayoutWidget(QWidget* widget)
+  {
+    QtLayout* layout = new QtLayout;
+    setLayout(layout);
+    layout->addWidget(widget);
+  }
+
+  LayoutWidget(QWidget* widget1, QWidget* widget2)
+  {
+    QtLayout* layout = new QtLayout;
+    setLayout(layout);
+    layout->addWidget(widget1);
+    layout->addWidget(widget2);
+  }
+
+};
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
 //TODO(james): These should be replaced with something more generic ... tuple/fusion?
 
 template<class First>
@@ -480,16 +508,91 @@ struct ScopeProfile
 
 //-----------------------------------------------------------------------------
 
-#define QSMP_PROFILE(function) \
+#define QSMP_PROFILE(context, function) \
   static int i = 0;\
   static DWORD ticks = 0;\
   ScopeProfile _profile(ticks);\
   if (i++ > 10000)\
   {\
-  QSMP_LOG("Profile") << #function << ": " << ticks;\
+  LOG(context) << "PROFILE: " #function << " " << ticks;\
     ticks = 0;\
     i = 0;\
   }
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+class InvokeMethod
+{
+public:
+  typedef void result_type;
+
+  InvokeMethod(QObject* obj, const char* member,
+               Qt::ConnectionType type = Qt::AutoConnection,
+               QGenericReturnArgument ret = QGenericReturnArgument())
+               : obj_(obj),member_(member),type_(type),ret_(ret)
+  {
+  }
+
+  template<class T0>
+  void operator()(const char* T0Name, const T0& a0)const
+  {
+    QMetaObject::invokeMethod(obj_,member_,type_,ret_,QArgument<T0>(T0Name,a0));
+  }
+
+private:
+  QObject*               obj_;
+  const char*            member_;
+  Qt::ConnectionType     type_;
+  QGenericReturnArgument ret_;
+  
+};
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+template<class T>
+boost::shared_ptr<T> spnew()
+{return boost::shared_ptr<T>(new T());}
+
+//-----------------------------------------------------------------------------
+
+template<class T, class T0>
+boost::shared_ptr<T> spnew(const T0& a0)
+{return boost::shared_ptr<T>(new T(a0));}
+
+//-----------------------------------------------------------------------------
+
+template<class T, class T0, class T1>
+boost::shared_ptr<T> spnew(const T0& a0, const T1& a1)
+{return boost::shared_ptr<T>(new T(a0, a1));}
+//-----------------------------------------------------------------------------
+
+template<class T, class T0, class T1, class T2>
+boost::shared_ptr<T> spnew(const T0& a0, const T1& a1, const T2& a2)
+{return boost::shared_ptr<T>(new T(a0, a1, a2));}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+struct NullDeleter
+{
+  template<class T>
+  void operator()(T*)
+  {
+  }
+};
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+QSMP_END
+
+
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -507,6 +610,5 @@ std::basic_ostream<CharT,traits>& operator<<(std::basic_ostream<CharT,traits>& s
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-QSMP_END
 
 #endif

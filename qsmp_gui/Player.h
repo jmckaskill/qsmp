@@ -95,102 +95,25 @@ public:
   PlayerHistory();
   PlayerHistory(Player* player);
 
-  class const_cache_iterator : public std::iterator<std::random_access_iterator_tag,const Media>
-  {
-  public:
-    reference operator*()const
-    {
-      return history_->cache_[index_];
-    }
-    pointer operator->()const
-    {
-      return &history_->cache_[index_];
-    }
-
-    const_cache_iterator& operator++()//preincrement
-    {
-      index_ = history_->GetNext(index_);
-      return *this;
-    }
-    const_cache_iterator  operator++(int)//postincrement
-    {
-      const_cache_iterator ret = *this;
-      ++(*this);
-      return ret;
-    }
-    const_cache_iterator& operator+=(int diff)
-    {
-      index_ = history_->GetNext(index_,diff);
-      return *this;
-    }
-    const_cache_iterator& operator--()//predecrement
-    {
-      --index_;
-      return *this;
-    }
-    const_cache_iterator  operator--(int)//postdecrement
-    {
-      return const_cache_iterator(history_,index_--);
-    }
-    const_cache_iterator& operator-=(int diff)
-    {
-      index_ -= diff;
-      return *this;
-    }
-    ptrdiff_t operator-(const_cache_iterator r)
-    {
-      return index_ - r.index_;
-    }
-
-    bool operator==(const_cache_iterator r)
-    {
-      assert(history_ == r.history_);
-      return (index_ == r.index_);
-    }
-    bool operator!=(const_cache_iterator r)
-    {
-      return !(*this == r);
-    }
-  private:
-    friend class PlayerHistory;
-
-    const_cache_iterator(PlayerHistory* history, int index)
-      : history_(history),
-        index_(index)
-    {}
-
-    PlayerHistory*               history_;
-    int                          index_;
-  };
-
-  const_cache_iterator begin()
-  {
-    return const_cache_iterator(this,0);
-  }
-
-  const_cache_iterator begin(size_t max_old_cache)
-  {
-    int old_begin = int(current_) - max_old_cache;
-    if (old_begin < 0)
-      old_begin = 0;
-    return const_cache_iterator(this,old_begin);
-  }
-  const_cache_iterator end(size_t cache_size)
-  {
-    return const_cache_iterator(this,cache_size + queue_end_);
-  }
-
-  void PlayFile(const Media& entry);
   void SetNextCallback(boost::function<Media ()> callback);
-  void InvalidateCache();
   void SetPlayer(Player* player);
 
-  void InsertToQueue(uint queue_index, const Media& entry);
-  void RemoveFromQueue(uint queue_index);
+  void PlayFile(const Media& entry);
+  void InsertToQueue(int index, const Media& entry);
+  void RemoveFromQueue(int index);
+  void RemoveFromCache(int index);
 
-  // Used by the player to request the next item, but will call CurrentSourceChanged
-  // back sometime after requesting to indicate when it has in fact switched over
-  Media PlayerNext();
+  // Used by the player to request the next item, but will call SourceChanged
+  // back sometime after to indicate when it has in fact switched over
+  Media GetPlayerNext();
+
+  size_t history_size()const{return current_;}
+  size_t queue_size()const{return queue_end_ - current_;}
+  size_t cache_size()const{return cache_.size() - queue_end_;}
+
+  Media LookupHistory(int index){return Lookup(current_ + index);}
+  Media LookupQueue(int index){return Lookup(current_ + index);}
+  Media LookupCache(int index){return Lookup(queue_end_ + index);}
 
 public Q_SLOTS:
   Media Next(){return Next(false);}
@@ -203,16 +126,33 @@ public Q_SLOTS:
 
 Q_SIGNALS:
   void OnPlayFile(const Media& entry, bool play_file);
-  void OnHistoryUpdated();
+  void OnCacheReset();
+
+  //The insert and remove signals follow insertions and removals STL style
+  //Thus an insert at index x for count 1 means that after insertion the new item
+  //sits at index x (ie _before_ current item at x)
+  //A removal at x for count y means removal of [x,x+y)
+
+  void OnHistoryInsert(int index, const Media& media);
+  void OnHistoryRemove(int index);
+
+  //Queue indexes are positive starting at 0 (0 is a special value for the current item)
+  void OnQueueInsert(int index, const Media& media);
+  void OnQueueRemove(int index);
+
+  //Cache indexes are positive starting from 0 which is the first item in the cache
+  void OnCacheInsert(int index, const Media& media);
+  void OnCacheRemove(int index);
+
 private:
   friend class const_cache_iterator;
   typedef std::vector<Media> cache_t;
   void                Init();
-  size_t              GetNext(size_t i, size_t offset = 1);
-  Media               UpdateCurrent(size_t new_current, bool send_play, bool force_play);
+  Media               Lookup(int index);
 
-  bool                current_valid()const{return current_!=cache_.size() && cache_[current_].valid();}
-  Media*              current(){return &cache_[current_];}
+  void                ResetCache();
+  void                PreviousUpdate();
+  void                NextUpdate();
 
   cache_t             cache_;
   size_t              current_;

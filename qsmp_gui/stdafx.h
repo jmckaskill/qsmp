@@ -20,8 +20,6 @@
 // All third party headers should go in here (even if they are used in only one file)
 // This file is then precompiled
 
-#include <afx.h>
-
 //STL Includes
 #include <vector>
 #include <string>
@@ -45,10 +43,10 @@
 #include <boost/utility/singleton.hpp>
 
 //TBB Includes
-#include <tbb/atomic.h>
-#include <tbb/parallel_sort.h>
-#include <tbb/tbb_thread.h>
-#include <tbb/task_scheduler_init.h>
+//#include <tbb/atomic.h>
+//#include <tbb/parallel_sort.h>
+//#include <tbb/tbb_thread.h>
+//#include <tbb/task_scheduler_init.h>
 
 //Lua Includes
 extern "C"

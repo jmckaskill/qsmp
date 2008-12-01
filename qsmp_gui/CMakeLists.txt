@@ -1,7 +1,7 @@
 project(qsmp_gui)
 
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost COMPONENTS filesystem system thread date_time)
+find_package(Boost COMPONENTS filesystem system thread date_time iostreams regex)
 
 set(TBB_ROOT E:/SCM/tbb-win32 CACHE FILEPATH "tbb root")
 set(TBB_INCLUDE_DIR ${TBB_ROOT}/include)
@@ -16,7 +16,7 @@ include_directories(${Boost_INCLUDE_DIR}
                     ${MMShellHook_SOURCE_DIR}
                     ${id3lib_INCLUDE_DIR}
                     ${lua_INCLUDE_DIR}
-                    ${TBB_INCLUDE_DIR}
+                    #${TBB_INCLUDE_DIR}
                     ${TCL_INCLUDE_DIR}
                     ${boost_singleton_INCLUDE_DIR}
                     include
@@ -32,23 +32,26 @@ include(${QT_USE_FILE})
 
 set(headers common.h
             utilities.h
-            PlaylistModel.inl
-            PlaylistModel.h
-            Log.h
             LuaTcpConsole.h
             Player.h
             ViewSelector.h
             PlaylistView.h
             HotkeyWindow.h
+            Cache.h
+            Process.h
+            CacheModel.h
+            TreeModel.h
+            TreeModel.inl
             stdafx.h)
 set(sources qsmp_gui.cpp
             LuaTcpConsole.cpp
             Player.cpp
-            Log.cpp
             PlaylistView.cpp
             HotkeyWindow.cpp
-            PlaylistModel.cpp
             ViewSelector.cpp
+            Cache.cpp
+            Process.cpp
+            CacheModel.cpp
             stdafx.cpp)
 
 qsmp_qt4_automoc(${sources})
@@ -57,9 +60,10 @@ add_executable(qsmp_gui ${sources} ${headers} ${ui})
 set_precompiled_header(qsmp_gui stdafx.h stdafx.cpp)
 
 target_link_libraries(qsmp_gui 
+                      qsmp_lib
                       ${QT_LIBRARIES}
                       ${Boost_LIBRARIES}
-                      ${TBB_LIBRARIES}
+                      #${TBB_LIBRARIES}
                       MMShellHook
                       id3lib
                       zlib

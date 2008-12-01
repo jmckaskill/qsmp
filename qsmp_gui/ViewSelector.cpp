@@ -27,38 +27,72 @@ QSMP_BEGIN
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-ViewSelector::ViewSelector(QWidget* parent_widget)
-: parent_widget_(parent_widget)
+QVariant ViewTreeNode::data(int column, int role)const
 {
-  model_ = new Model(boost::bind(&ViewSelector::tree,this));
-  model_->set_clicked(boost::bind(&ViewSelector::ActivateEntry,this,_1));
-  model_->SetView(this);
-  setModel(model_);
+  if (column == 0 && role == Qt::DisplayRole)
+  {
+    return name_;
+  }
+  return QVariant();
 }
 
 //-----------------------------------------------------------------------------
 
-ViewSelectorNode* ViewSelector::AddViewEntry(boost::function<QLayout* ()> new_view,
-                                             QString                      text,
-                                             ViewSelectorNode*            parent)
+QModelIndex ViewTreeNode::AddChild(QString name, shared_ptr<QWidget> widget)
 {
-  if (!parent)
-    parent = &tree_;
+  BeginAddChildren(1);
 
-  ViewEntry view;
-  view.new_view_ = new_view;
-  view.text_     = text;
-  parent->push_back(view);
-  model_->reset();
-  return &*parent->rbegin();
+  ViewTreeModel* m = model();
+
+  ViewTreeNode* child = AddChildren(1);
+
+  child->name_   = name;
+  child->widget_ = widget;
+
+  EndAddChildren(m);
+  return child->index(0);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+ViewTreeModel::~ViewTreeModel()
+{
+  if (old_widget_)
+    layout_->removeWidget(old_widget_);
 }
 
 //-----------------------------------------------------------------------------
 
-void ViewSelector::ActivateEntry(const ViewSelectorNode& node)
+QModelIndex ViewTreeModel::AddView(QString name, shared_ptr<QWidget> widget, const QModelIndex& parent)
 {
-  delete parent_widget_->layout();
-  parent_widget_->setLayout(node.get().new_view_());
+  return FromIndex(parent)->AddChild(name, widget);
+}
+
+//-----------------------------------------------------------------------------
+
+void ViewTreeModel::OnClicked(const QModelIndex& index)
+{
+  if (old_widget_)
+  {
+    layout_->removeWidget(old_widget_);
+    old_widget_->hide();
+  }
+  old_widget_ = FromIndex(index)->widget().get();
+  layout_->addWidget(old_widget_);
+  old_widget_->show();
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+ViewTree::ViewTree(QLayout* layout)
+: model_(layout)
+{
+  setModel(model());
+  connect(this, SIGNAL(clicked(const QModelIndex&)), &model_, SLOT(OnClicked(const QModelIndex&)));
 }
 
 //-----------------------------------------------------------------------------
