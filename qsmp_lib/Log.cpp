@@ -15,10 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.      *
  ******************************************************************************/
 
-#include "stdafx.h"
-#include <qsmp_gui/Log.h>
+#include <boost/filesystem.hpp>
+#include <boost/date_time.hpp>
+#include <boost/range.hpp>
+#include <boost/thread.hpp>
+#include <boost/utility/typed_in_place_factory.hpp>
+#include <locale>
+#include <qsmp_lib/Log.h>
 
-#include <afx.h>
+#ifdef WIN32
+#include <crtdbg.h>
+#endif
 
 namespace {
 
@@ -80,81 +87,104 @@ QSMP_BEGIN
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-LogEntryBuffer::LogEntryBuffer(const char* context, const char* file_name, int line_no, bool start)
-: file_name_(file_name),
-  line_no_(line_no),
-  have_started_(false)
+LoggerData* GetLoggerData()
 {
-  context_ = manager_->GetContext(context);
-  string_buffer_.imbue(manager_->locale());
-  if (start)
-    StartLogEntry();
+  static boost::thread_specific_ptr<LoggerData> data;
+  if (!data.get())
+    data.reset(new LoggerData);
+  return data.get();
 }
 
 //-----------------------------------------------------------------------------
 
-LogEntryBuffer::LogEntryBuffer(LogContext context, const char* file_name, int line_no, bool start)
-: file_name_(file_name),
-  line_no_(line_no),
-  have_started_(false)
+void LoggerData::StartNewEntry(const LogContext& context)
 {
-  context_ = manager_->GetContext(context);
-  string_buffer_.imbue(manager_->locale());
-  if (start)
-    StartLogEntry();
-}
-
-//-----------------------------------------------------------------------------
-
-LogEntryBuffer::~LogEntryBuffer()
-{
-  manager_->LogOutput(this);
-}
-
-//-----------------------------------------------------------------------------
-
-LogEntryBuffer& LogEntryBuffer::StartLogEntry()
-{
-  if (have_started_)
-    string_buffer_ << std::endl;
-
-  have_started_ = true;
-
   using namespace boost::posix_time;
-  string_buffer_ << second_clock::local_time()
-                 << ": [" 
-                 << context_->full_key_ 
-                 << " - " 
-                 << ::GetCurrentThreadId() //TODO(james): Replace with something more portable
-                 << "]\t";
+  stream_ << microsec_clock::local_time()
+    << ": [" 
+    << context.full_key()
+    << " - " 
+    << boost::this_thread::get_id()
+    << "] ";
+}
 
-  return *this;
+//-----------------------------------------------------------------------------
+
+void LoggerData::OutputData(LogBase* logger)
+{
+  if (!buffer_.empty())
+  {
+    manager_->LogOutput(&buffer_[0],
+                        buffer_.size(),
+                        logger->context_,
+                        logger->severity_,
+                        logger->file_name_,
+                        logger->line_no_);
+    buffer_.clear();
+  }
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-void QtMsgHandler(QtMsgType type, const char* buf)
+LogBase::LogBase(const LogContext& context, LogSeverity severity, const char* file_name, int line_no)
+: context_(context),
+  severity_(severity),
+  file_name_(file_name),
+  line_no_(line_no),
+  data_(NULL)
 {
-  static LogContext debug    = GetLogContext("Qt/Debug");
-  static LogContext warning  = GetLogContext("Qt/Warning");
-  static LogContext critical = GetLogContext("Qt/Critical");
-  static LogContext fatal    = GetLogContext("Qt/Fatal");
-  switch(type)
+  if (!context.mute(severity))
   {
-  case QtDebugMsg:
-    QSMP_LOG(debug) << buf;
-    break;
-  case QtWarningMsg:
-    QSMP_LOG(warning) << buf;
-    break;
-  case QtCriticalMsg:
-    QSMP_LOG(critical) << buf;
-    break;
-  case QtFatalMsg:
-    QSMP_LOG(fatal) << buf;
-    break;
+    data_ = GetLoggerData();
+    data_->StartNewEntry(context_);
+  }
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+Log::Log(const LogContext& context, LogSeverity severity, const char* file_name, int line_no)
+: LogBase(context,severity,file_name,line_no)
+{
+}
+
+//-----------------------------------------------------------------------------
+
+Log::~Log()
+{
+  if (!mute())
+  {
+    //TODO(james) need to figure out a way to do this without having to flush
+    data_->stream_ << std::flush;
+    data_->OutputData(this);
+  }
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+FormatLog::FormatLog(const LogContext& context, const char* format_string, LogSeverity severity, const char* file_name, int line_no)
+: LogBase(context,severity,file_name,line_no)
+{
+  if (!mute())
+  {
+    data_->formatter_.parse(format_string);
+  }
+}
+
+//-----------------------------------------------------------------------------
+
+FormatLog::~FormatLog()
+{
+  if (!mute())
+  {
+    //TODO(james) need to figure out a way to do this without having to flush
+    data_->stream_ << data_->formatter_ << std::flush;
+    data_->OutputData(this);
   }
 }
 
@@ -164,13 +194,14 @@ void QtMsgHandler(QtMsgType type, const char* buf)
 
 LogManager::LogManager(boost::restricted)
 : file_log_(NewLogPath().file_string().c_str()),
-  locale_(std::locale(),new boost::date_time::time_facet<boost::posix_time::ptime,char>("%Y/%m/%d %H:%M:%S"))
+  //locale_(std::locale(),new boost::date_time::time_facet<boost::posix_time::ptime,char>("%Y/%m/%d %H:%M:%S"))
+  locale_(std::locale(),new boost::date_time::time_facet<boost::posix_time::ptime,char>("%H:%M:%s"))
 {
 }
 
 //-----------------------------------------------------------------------------
 
-LogContext LogManager::GetContext(LogContext context, const char *sub_context)
+LogContextIter LogManager::GetContext(LogContextIter context, const char *sub_context, LogDefaults defaults)
 {
   typedef boost::iterator_range<const char*> Range;
   static const Range seperator = boost::as_literal("/");
@@ -185,11 +216,11 @@ LogContext LogManager::GetContext(LogContext context, const char *sub_context)
     if (!boost::empty(sub_string))
     {
       LogTree* node = (context.valid()) ? context.node() : &logs_;
-      LogContext new_context = std::find(node->begin(),node->end(),sub_string);
+      LogContextIter new_context = std::find(node->begin(),node->end(),sub_string);
       if (new_context == node->end())
       {
         std::string key(boost::begin(sub_string),boost::end(sub_string));
-        LogContextData data(node->get(),key);
+        LogContextData data(node->get(),key,defaults);
         new_context = node->insert(data);
       }
       context = new_context;
@@ -200,29 +231,43 @@ LogContext LogManager::GetContext(LogContext context, const char *sub_context)
 
 //-----------------------------------------------------------------------------
 
-void LogManager::LogOutput(LogEntryBuffer* buffer)
+void LogManager::LogOutput(const char* begin, size_t size,
+                           LogContextIter iter, LogSeverity severity,
+                           const char* file_name, int line_no)
 {
   using boost::lock_guard;
   using boost::mutex;
-  LogContext context = buffer->context_;
-  //TODO(james): we could probably pull the data straight out of the stringstream buffer
-  std::string str = buffer->string_buffer_.str();
 
-  if (context->outputs_[LogOutput_Trace])
+#ifdef WIN32
+  if (iter->log(LogOutput_Trace, severity))
   {
-    //Not sure whether this needs to be locked or not, but I don't believe it does
-    ATL::CTraceFileAndLineInfo(buffer->file_name_,buffer->line_no_)("%s\n",str.c_str());
+    int report_type;
+    switch(severity)
+    {
+    case LogSeverity_Fatal:
+      report_type = _CRT_ERROR;
+      break;
+    case LogSeverity_Normal:
+    case LogSeverity_Warning:
+    default:
+      report_type = _CRT_WARN;
+      break;
+    }
+    std::string str(begin,size);
+    if(_CrtDbgReport(report_type,file_name,line_no,"","%s\n",str.c_str()))
+      _CrtDbgBreak();
   }
-  if (context->outputs_[LogOutput_Stderr])
+#endif
+  if (iter->log(LogOutput_Stderr, severity))
   {
     lock_guard<mutex> lock(stderr_lock_);
-    std::cerr.write(str.data(),str.size());
+    std::cerr.write(begin, size);
     std::cerr.put('\n');
   }
-  if (context->outputs_[LogOutput_LogFile])
+  if (iter->log(LogOutput_LogFile, severity))
   {
     lock_guard<mutex> lock(file_lock_);
-    file_log_.write(str.data(),str.size());
+    file_log_.write(begin, size);
     file_log_.put('\n');
     file_log_.flush();
   }
