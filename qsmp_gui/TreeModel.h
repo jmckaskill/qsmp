@@ -18,7 +18,8 @@
 #ifndef QSMP_TREEMODEL_H_
 #define QSMP_TREEMODEL_H_
 
-#include <QtCore/QAbstractItemModel.h>
+#include <qsmp_gui/common.h>
+#include <QtCore/QAbstractItemModel>
 #include <vector>
 
 QSMP_BEGIN
@@ -27,8 +28,6 @@ QSMP_BEGIN
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-namespace Model
-{
 template<class Node, class Model>
 class TreeModel;
 
@@ -77,8 +76,8 @@ protected:
 
 private:
   friend class TreeModel<Node, Model>;
-  template<class Node, class Model>
-  friend std::ostream& operator<<(std::ostream& stream, const TreeModelNode<Node, Model>& node);
+  template<class StreamNode, class StreamModel>
+  friend std::ostream& operator<<(std::ostream& stream, const TreeModelNode<StreamNode, StreamModel>& node);
   Model*           model_;
   int              id_;
   int              row_;
@@ -146,7 +145,6 @@ private:
   Model*              model_;
 };
 
-}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

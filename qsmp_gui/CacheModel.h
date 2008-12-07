@@ -29,11 +29,13 @@ QSMP_BEGIN
 //-----------------------------------------------------------------------------
 class CacheModel;
 
-class CacheModelNode : public Model::TreeModelNode<CacheModelNode, CacheModel>
+class CacheModelNode : public TreeModelNode<CacheModelNode, CacheModel>
 {
 public:
+  typedef TreeModelNode<CacheModelNode, CacheModel> Base;
+
   CacheModelNode(CacheModel* model)
-    : TreeModelNode(model),
+    : Base(model),
       tree_(NULL),blob_(NULL),commit_(NULL),more_children_(false),requested_more_children_(false)
   {}
 
@@ -41,7 +43,7 @@ public:
   int         columnCount()const{return 3;}
   QVariant    data(int column, int role)const;
   void        fetchMore();
-  bool        hasChildren()const{return TreeModelNode::hasChildren() || more_children_;}
+  bool        hasChildren()const{return Base::hasChildren() || more_children_;}
 
   void        AddChildrenFromCache(bool remove_loading);
   void        AddLoadingChild();
@@ -62,10 +64,12 @@ private:
 
 //-----------------------------------------------------------------------------
 
-class CacheModel : public Model::TreeModel<CacheModelNode, CacheModel>
+class CacheModel : public TreeModel<CacheModelNode, CacheModel>
 {
   Q_OBJECT
 public:
+  typedef TreeModel<CacheModelNode, CacheModel> Base;
+
   CacheModel(CacheTreeRef tree);
 
 public Q_SLOTS:
@@ -96,3 +100,4 @@ QSMP_END
 
 
 #endif
+

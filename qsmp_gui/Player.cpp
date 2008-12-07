@@ -169,6 +169,8 @@ namespace
 void Player::StatusChanged(Phonon::State newState, Phonon::State oldState)
 {
   LOG("Player") << "Status changed: " << oldState << " -> " << newState;
+  if (newState == Phonon::ErrorState)
+    LOG("Player") << "Error type: " << media_.errorType();
   switch (newState)
   {
   case Phonon::PlayingState:

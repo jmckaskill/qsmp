@@ -23,6 +23,7 @@
 #include <qsmp_gui/TreeModel.h>
 #include <QtCore/qdatetime.h>
 #include <QtGui/qwidget.h>
+#include <QtGui/qtreeview.h>
 
 
 namespace Phonon {
@@ -46,11 +47,13 @@ class HistoryModel;
 
 //-----------------------------------------------------------------------------
 
-class HistoryModelNode : public Model::TreeModelNode<HistoryModelNode, HistoryModel>
+class HistoryModelNode : public TreeModelNode<HistoryModelNode, HistoryModel>
 {
 public:
+  typedef TreeModelNode<HistoryModelNode, HistoryModel> Base;
+
   HistoryModelNode(HistoryModel* model)
-    : TreeModelNode(model)
+    : Base(model)
   {}
 
   int       columnCount()const{return 2;}
@@ -64,10 +67,12 @@ private:
 
 //-----------------------------------------------------------------------------
 
-class HistoryModel : public Model::TreeModel<HistoryModelNode, HistoryModel>
+class HistoryModel : public TreeModel<HistoryModelNode, HistoryModel>
 {
   Q_OBJECT
 public:
+  typedef TreeModel<HistoryModelNode, HistoryModel> Base;
+
   HistoryModel(PlayerHistory* history, size_t back_cache, size_t forward_cache);
 
 public Q_SLOTS:
@@ -133,3 +138,4 @@ private:
 QSMP_END
 
 #endif
+

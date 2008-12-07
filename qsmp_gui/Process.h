@@ -20,6 +20,11 @@
 
 #include <qsmp_gui/common.h>
 
+#include <boost/filesystem.hpp>
+#include <qsmp_lib/Log.h>
+#include <string>
+#include <vector>
+
 
 QSMP_BEGIN
 
@@ -67,18 +72,17 @@ class Win32Process
 {
   QSMP_NON_COPYABLE(Win32Process);
 public:
-  explicit Win32Process(const std::string& process, const std::string& arguments);
-  explicit Win32Process(const std::string& process, const fs::path& working_dir, const std::string& arguments);
+  Win32Process(LogContext log, const std::string& process, const fs::path& working_dir, const std::vector<std::string>& arguments);
 
-  //template<class Range1T>
-  //explicit Win32Process(const Range1T& arguments);
 
   ~Win32Process();
 
   void Run();
-  void Run(const std::string& process, const fs::path& working_dir, const std::string& arguments);
+  void Run(const std::string& process, const fs::path& working_dir, const std::vector<std::string>& arguments);
 
   bool is_running()const{return process_handle_.valid();}
+
+  typedef HANDLE Fd;
 
   HANDLE stdin_fd()const{return stdin_;}
   HANDLE stdout_fd()const{return stdout_;}
@@ -95,15 +99,15 @@ public:
   void Terminate(int exit_code);
 
 private:
-  std::string         process_;
-  fs::path            working_dir_;
-  std::string         arguments_;
-  PROCESS_INFORMATION proc_info_;
-  ScopedHandle        stdin_;
-  ScopedHandle        stdout_;
-  ScopedHandle        stderr_;
-  ScopedHandle        process_handle_;
-  ScopedHandle        thread_handle_;
+  std::string                       process_;
+  fs::path                          working_dir_;
+  std::vector<std::string>          arguments_;
+  PROCESS_INFORMATION               proc_info_;
+  ScopedHandle                      stdin_;
+  ScopedHandle                      stdout_;
+  ScopedHandle                      stderr_;
+  ScopedHandle                      process_handle_;
+  ScopedHandle                      thread_handle_;
 };
 
 typedef Win32Process Process;
@@ -113,29 +117,43 @@ typedef Win32Process Process;
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#ifdef POSIX
+#ifdef UNIX
 class PosixProcess
 {
+  QSMP_NON_COPYABLE(PosixProcess);
 public:
-  explicit PosixProcess(const std::string& command_line);
-
-  template<class Range1T>
-  explicit PosixProcess(const Range1T& arguments);
+  PosixProcess(LogContext log);
+  PosixProcess(LogContext log, const std::string& process, const fs::path& working_dir, const std::vector<std::string>& arguments);
 
   ~PosixProcess();
 
-  bool is_running()const;
+  void Run();
+  void Run(const std::string& process, const fs::path& working_dir, const std::vector<std::string>& arguments);
 
-  int stdin_fd()const;
-  int stdout_fd()const;
-  int stderr_fd()const;
+  bool is_running()const {return pid_ != -1;}
 
-  pid_t pid()const;
+  typedef int Fd;
+
+  int stdin_fd()const{return stdin_fd_;}
+  int stdout_fd()const{return stdout_fd_;}
+  int stderr_fd()const{return stderr_fd_;}
+
+  pid_t pid()const{return pid_;}
 
   void Signal(int signal);
 
   void WaitForStartup(int timeout);
   int WaitForFinish(int timeout);
+private:
+  const LogContext          log_;
+  const LogContext          log_errno_;
+  std::string               process_;
+  fs::path                  working_dir_;
+  std::vector<std::string>  arguments_;
+  pid_t                     pid_;
+  int                       stdin_fd_;
+  int                       stdout_fd_;
+  int                       stderr_fd_;
 };
 
 typedef PosixProcess Process;
@@ -148,3 +166,4 @@ typedef PosixProcess Process;
 QSMP_END
 
 #endif
+

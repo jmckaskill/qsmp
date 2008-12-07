@@ -28,6 +28,7 @@
 #include <QtGui/qpushbutton.h>
 #include <QtGui/qsortfilterproxymodel.h>
 #include <QtGui/qtreeview.h>
+#include <QtGui/qboxlayout.h>
 
 QSMP_BEGIN
 
@@ -55,7 +56,7 @@ QVariant HistoryModelNode::data(int column, int role)const
 //-----------------------------------------------------------------------------
 
 HistoryModel::HistoryModel(PlayerHistory* history, size_t back_cache, size_t forward_cache)
-: TreeModel(this),
+: Base(this),
   history_(history),
   back_cache_(back_cache),
   forward_cache_(forward_cache),
@@ -107,7 +108,7 @@ void HistoryModel::HistoryInsert(int begin, const Media& media)
 
     CheckCache();
   }
-  FLOG("HistoryModel", "HistoryInsert: %1% %2% \n %3%") % begin % media.path() % *root();
+  FLOG("HistoryModel", "HistoryInsert: %1% %2%") % begin % media.path();
 }
 
 //-----------------------------------------------------------------------------
@@ -124,7 +125,7 @@ void HistoryModel::HistoryRemove(int begin)
 
     CheckCache();
   }
-  FLOG("HistoryModel", "HistoryRemove: %1% \n %2%") % begin % *root();
+  FLOG("HistoryModel", "HistoryRemove: %1%") % begin;
 }
 
 //-----------------------------------------------------------------------------
@@ -157,7 +158,7 @@ void HistoryModel::QueueInsert(int begin, const Media& media)
   if (update_begin < update_end)
     r->ChildrenUpdated(update_begin, update_end - update_begin);
 
-  FLOG("HistoryModel", "QueueInsert: %1% %2% \n %3%") % begin % media.path() % *root();
+  FLOG("HistoryModel", "QueueInsert: %1% %2%") % begin % media.path();
 }
 
 //-----------------------------------------------------------------------------
@@ -184,7 +185,7 @@ void HistoryModel::QueueRemove(int begin)
   }
   if (update_begin < update_end)
     r->ChildrenUpdated(update_begin, update_end - update_begin);
-  FLOG("HistoryModel", "QueueRemove: %1% \n %2%") % begin % *root();
+  FLOG("HistoryModel", "QueueRemove: %1%") % begin;
 }
 
 //-----------------------------------------------------------------------------
@@ -201,7 +202,7 @@ void HistoryModel::CacheInsert(int begin, const Media& media)
 
     HistoryModelNode::EndInsertChildren(this);
   }
-  FLOG("HistoryModel", "CacheInsert: %1% %2% \n %3%") % begin % media.path() % *root();
+  FLOG("HistoryModel", "CacheInsert: %1% %2%") % begin % media.path();
 }
 
 //-----------------------------------------------------------------------------
@@ -219,7 +220,7 @@ void HistoryModel::CacheRemove(int begin)
 
     CheckCache();
   }
-  FLOG("HistoryModel", "CacheRemove: %1% \n %2%") % begin % *root();
+  FLOG("HistoryModel", "CacheRemove: %1%") % begin;
 }
 
 //-----------------------------------------------------------------------------

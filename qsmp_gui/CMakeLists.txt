@@ -1,7 +1,9 @@
 project(qsmp_gui)
 
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost COMPONENTS filesystem system thread date_time iostreams regex)
+find_package(Boost REQUIRED filesystem system thread date_time iostreams regex)
+
+find_package(ID3 REQUIRED)
 
 set(TBB_ROOT E:/SCM/tbb-win32 CACHE FILEPATH "tbb root")
 set(TBB_INCLUDE_DIR ${TBB_ROOT}/include)
@@ -15,6 +17,7 @@ set(TBB_LIBRARIES debug ${TBB_LIBRARY_DIR}/tbb_debug.lib
 include_directories(${Boost_INCLUDE_DIR} 
                     ${MMShellHook_SOURCE_DIR}
                     ${id3lib_INCLUDE_DIR}
+		                ${ID3_INCLUDE_DIR}
                     ${lua_INCLUDE_DIR}
                     #${TBB_INCLUDE_DIR}
                     ${TCL_INCLUDE_DIR}
@@ -30,42 +33,52 @@ set(QT_USE_QTNETWORK 1)
 find_package(Qt4)
 include(${QT_USE_FILE})
 
-set(headers common.h
+set(headers 
+            common.h
             utilities.h
-            LuaTcpConsole.h
+            #LuaTcpConsole.h
             Player.h
             ViewSelector.h
             PlaylistView.h
-            HotkeyWindow.h
             Cache.h
             Process.h
             CacheModel.h
             TreeModel.h
             TreeModel.inl
-            stdafx.h)
-set(sources qsmp_gui.cpp
-            LuaTcpConsole.cpp
+            stdafx.h
+   )
+set(sources 
+            qsmp_gui.cpp
+            #LuaTcpConsole.cpp
             Player.cpp
             PlaylistView.cpp
-            HotkeyWindow.cpp
             ViewSelector.cpp
             Cache.cpp
             Process.cpp
             CacheModel.cpp
-            stdafx.cpp)
+    )
+
+if(WIN32)
+  set(sources ${sources} HotkeyWindow.cpp stdafx.cpp)
+  set(headers ${headers} HotkeyWindow.h stdafx.h)
+endif(WIN32)
 
 qsmp_qt4_automoc(${sources})
 add_executable(qsmp_gui ${sources} ${headers} ${ui})
 
-set_precompiled_header(qsmp_gui stdafx.h stdafx.cpp)
 
 target_link_libraries(qsmp_gui 
                       qsmp_lib
                       ${QT_LIBRARIES}
                       ${Boost_LIBRARIES}
+		                  ${ID3_LIBRARY}
                       #${TBB_LIBRARIES}
-                      MMShellHook
-                      id3lib
-                      zlib
                       lua
-                      luabind)
+                     )
+if(USE_BUILTIN_ID3LIB)
+  target_link_libraries(qsmp_gui id3lib zlib)
+endif(USE_BUILTIN_ID3LIB)
+if(WIN32)
+  set_precompiled_header(qsmp_gui stdafx.h stdafx.cpp)
+  target_link_libraries(qsmp_gui MMShellHook)
+endif(WIN32)

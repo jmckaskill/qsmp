@@ -15,13 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.      *
  ******************************************************************************/
 
-#include <boost/filesystem.hpp>
+#include <qsmp_lib/Log.h>
+
 #include <boost/date_time.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/range.hpp>
 #include <boost/thread.hpp>
 #include <boost/utility/typed_in_place_factory.hpp>
 #include <locale>
-#include <qsmp_lib/Log.h>
 
 #ifdef WIN32
 #include <crtdbg.h>
@@ -128,36 +129,30 @@ void LoggerData::OutputData(LogBase* logger)
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-LogBase::LogBase(const LogContext& context, LogSeverity severity, const char* file_name, int line_no)
+LogBase::LogBase(const LogContext& context, LogSeverity severity, const char* file_name, int line_no, bool raw)
 : context_(context),
   severity_(severity),
   file_name_(file_name),
   line_no_(line_no),
-  data_(NULL)
+  data_(NULL),
+  raw_(raw)
 {
   if (!context.mute(severity))
   {
     data_ = GetLoggerData();
-    data_->StartNewEntry(context_);
+    if (!raw_)
+      data_->StartNewEntry(context_);
   }
 }
 
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 
-Log::Log(const LogContext& context, LogSeverity severity, const char* file_name, int line_no)
-: LogBase(context,severity,file_name,line_no)
-{
-}
-
-//-----------------------------------------------------------------------------
-
-Log::~Log()
+LogBase::~LogBase()
 {
   if (!mute())
   {
-    //TODO(james) need to figure out a way to do this without having to flush
+    if (!raw_)
+      data_->stream_ << std::endl;
     data_->stream_ << std::flush;
     data_->OutputData(this);
   }
@@ -167,8 +162,17 @@ Log::~Log()
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-FormatLog::FormatLog(const LogContext& context, const char* format_string, LogSeverity severity, const char* file_name, int line_no)
-: LogBase(context,severity,file_name,line_no)
+Log::Log(const LogContext& context, LogSeverity severity, const char* file_name, int line_no, bool raw)
+: LogBase(context,severity,file_name,line_no,raw)
+{
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+FormatLog::FormatLog(const LogContext& context, const char* format_string, LogSeverity severity, const char* file_name, int line_no, bool raw)
+: LogBase(context,severity,file_name,line_no,raw)
 {
   if (!mute())
   {
@@ -181,11 +185,7 @@ FormatLog::FormatLog(const LogContext& context, const char* format_string, LogSe
 FormatLog::~FormatLog()
 {
   if (!mute())
-  {
-    //TODO(james) need to figure out a way to do this without having to flush
-    data_->stream_ << data_->formatter_ << std::flush;
-    data_->OutputData(this);
-  }
+    data_->stream_ << data_->formatter_;
 }
 
 //-----------------------------------------------------------------------------
@@ -254,21 +254,21 @@ void LogManager::LogOutput(const char* begin, size_t size,
       break;
     }
     std::string str(begin,size);
-    if(_CrtDbgReport(report_type,file_name,line_no,"","%s\n",str.c_str()))
+    if(_CrtDbgReport(report_type,file_name,line_no,"","%s",str.c_str()))
       _CrtDbgBreak();
   }
 #endif
   if (iter->log(LogOutput_Stderr, severity))
   {
     lock_guard<mutex> lock(stderr_lock_);
+    //if (file_name)
+      //std::cerr << file_name << "(" << line_no << "): ";
     std::cerr.write(begin, size);
-    std::cerr.put('\n');
   }
   if (iter->log(LogOutput_LogFile, severity))
   {
     lock_guard<mutex> lock(file_lock_);
     file_log_.write(begin, size);
-    file_log_.put('\n');
     file_log_.flush();
   }
 }

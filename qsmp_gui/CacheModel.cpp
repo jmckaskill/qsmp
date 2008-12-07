@@ -193,7 +193,7 @@ void CacheModelNode::Init(CacheBlobRef blob, const QString& name)
 //-----------------------------------------------------------------------------
 
 CacheModel::CacheModel(CacheTreeRef tree)
-: TreeModel(this)
+: Base(this)
 {
   FromIndex(QModelIndex())->Init(tree, "/");
 }

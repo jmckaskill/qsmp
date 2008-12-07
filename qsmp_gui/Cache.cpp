@@ -18,6 +18,7 @@
 #include "stdafx.h"
 #include <qsmp_gui/Cache.h>
 
+#include <boost/assign/list_of.hpp>
 #include <boost/iostreams/device/array.hpp>
 #include <boost/range.hpp>
 #include <boost/regex.hpp>
@@ -349,7 +350,7 @@ namespace cache
   {
   public:
     ProcessData(LogContext context, CacheThread* cache_thread);
-    void operator()(HANDLE stdout_fd);
+    void operator()(Process::Fd stdout_fd);
   private:
     void OnDeclaration(const cache::CatFileDeclaration& declaration);
 
@@ -385,7 +386,7 @@ namespace cache
 
   //-----------------------------------------------------------------------------
 
-  void ProcessData::operator()(HANDLE stdout_fd)
+  void ProcessData::operator()(Process::Fd stdout_fd)
   {
     LOG(log_) << "Starting";
     cat_file_state_.OnDeclaration = boost::bind(&ProcessData::OnDeclaration,this,_1);
@@ -395,18 +396,40 @@ namespace cache
     state_ = &cat_file_state_;
 
     boost::array<char,4096> buffer;
-    DWORD read = 0;
+#ifdef WIN32
+    DWORD just_read = 0;
+#else
+    ssize_t just_read = 0;
+#endif
     size_t already_read = 0;
     for(;;)
     {
       LOG(log_) << "Main loop";
       QSMP_PROFILE(log_profile_,"Main loop");
       if (!more_to_process_)
-        ReadFile(stdout_fd,&buffer[already_read],buffer.size() - already_read,&read,NULL);
-      FLOG(log_, "Git input: Read %1%, Already in buffer %2%") % read % already_read;
+      {
+#ifdef WIN32
+        ReadFile(stdout_fd, &buffer[already_read], buffer.size() - already_read, &just_read, NULL);
+#else
+        just_read = read(stdout_fd, &buffer[already_read], buffer.size() - already_read);
+        if (just_read == -1)
+        {
+          //ERROR
+          ERRNO_LOG(log_);
+          break;
+        }
+        else if (just_read == 0)
+        {
+          //EOF
+          LOG(log_) << "EOF";
+          break;
+        }
+#endif
+      }
+      FLOG(log_, "Git input: Read %1%, Already in buffer %2%") % just_read % already_read;
       more_to_process_ = false;
       char* start = &buffer[0];
-      char* end   = start + already_read + read;
+      char* end   = start + already_read + just_read;
       char* new_start = state_->ProcessData(start,end);
       LOG(log_) << "Data processed: " << new_start - start;
       ASSERTE(log_, &*buffer.begin() <= new_start && new_start <= &*buffer.end());
@@ -415,7 +438,7 @@ namespace cache
       else
         more_to_process_ = false;
       already_read = end - new_start;
-      read = 0;
+      just_read = 0;
     }
   }
 
@@ -544,12 +567,10 @@ CacheThread::CacheThread(LogContext log, const fs::path& path)
   log_read_(log/"Read"),
   log_write_(log/"Write"),
   log_write_profile_(log_write_/"Profile"),
-  git_("C:/Program Files/Git/bin/git.exe", path, "cat-file --batch"),
+  git_(log/"Git", "/usr/bin/git", path, boost::assign::list_of("git")("cat-file")("--batch")),
   git_stdin_(git_.stdin_fd()),
   read_thread_(boost::bind(&CacheThread::ReadThread,this)),
-  write_thread_(boost::bind(&CacheThread::WriteThread,this)),
-  cache_queues_signal_(CreateEvent(NULL,FALSE,FALSE,NULL)),
-  task_signal_(CreateEvent(NULL,FALSE,FALSE,NULL))
+  write_thread_(boost::bind(&CacheThread::WriteThread,this))
 {
   LOG(log_) << "Launching git";
   //git_stdin_ << "73d23d6bb61c8e41dba58dc2576910c3738f21ef\n" //head commit
@@ -561,28 +582,20 @@ CacheThread::CacheThread(LogContext log, const fs::path& path)
 
 //-----------------------------------------------------------------------------
 
-CacheThread::~CacheThread()
-{
-  CloseHandle(task_signal_);
-  CloseHandle(cache_queues_signal_);
-}
-
-//-----------------------------------------------------------------------------
-
 void CacheThread::AddTask(shared_ptr<Task> task)
 {
   LOG(log_) << "Adding task";
   guard g(task_queue_lock_);
   bool start = task_queue_.empty();
   task_queue_.push(task);
-  if (start)
-    SetEvent(task_signal_);
+  task_signal_.notify_one();
 }
 
 //-----------------------------------------------------------------------------
 
 void CacheThread::ReadThread()
 {
+  LOG(log_read_) << "Init";
   try
   {
     cache::ProcessData data(log_read_,this);
@@ -598,30 +611,40 @@ void CacheThread::ReadThread()
 
 void CacheThread::WriteThread()
 {
+  LOG(log_write_) << "Init";
   try
   {
     for(;;)
     {
-      HANDLE handles[2] = {cache_queues_signal_,task_signal_};
-      if(WaitForMultipleObjects(2,handles,FALSE,INFINITE) > WAIT_OBJECT_0+1)
-        WIN32_FATAL(log_write_);
-
-      LOG(log_write_) << "Main write loop";
-      if (!current_task_)
+      if (task_queue_.empty())
       {
-        guard g(task_queue_lock_);
-        if(!task_queue_.empty())
+        boost::unique_lock<boost::mutex> lock(task_queue_lock_);
+        while (task_queue_.empty())
         {
-          LOG(log_write_) << "Starting new task";
-          current_task_ = task_queue_.front();
-          task_queue_.pop();
-          current_task_->operator()(boost::bind(&CacheThread::Finish,this),boost::bind(&CacheThread::RequestId,this,_1));
+          task_signal_.wait(lock);
         }
       }
 
-      if (current_task_)
+      LOG(log_write_) << "Starting new task";
+      {
+        guard g(task_queue_lock_);
+        current_task_ = task_queue_.front();
+        task_queue_.pop();
+      }
+      current_task_->operator()(boost::bind(&CacheThread::Finish,this),boost::bind(&CacheThread::RequestId,this,_1));
+      LOG(log_write_) << "Flushing";
+      git_stdin_ << std::flush;
+
+      while(current_task_)
       {
         QSMP_PROFILE(log_write_profile_,"Main loop");
+        {
+          boost::unique_lock<boost::mutex> lock(cache_queues_lock_);
+          while(commit_queue_.empty() && tree_queue_.empty() && blob_queue_.empty())
+          {
+            cache_queues_signal_.wait(lock);
+          }
+        }
         for(;;)
         {
           CacheCommitRef commit = NULL;
@@ -663,6 +686,7 @@ void CacheThread::WriteThread()
           if (!commit && !tree && !blob)
             break;
         }
+        LOG(log_write_) << "Flushing";
         git_stdin_ << std::flush;
       }
     }
@@ -679,7 +703,6 @@ void CacheThread::Finish()
 {
   LOG(log_write_) << "Finish";
   current_task_.reset();
-  SetEvent(task_signal_);
 }
 
 //-----------------------------------------------------------------------------
@@ -697,7 +720,7 @@ void CacheThread::OnCommit(CacheCommitRef commit)
   FLOG(log_read_, "Got commit: %1%") % commit->id_;
   guard g(cache_queues_lock_);
   commit_queue_.push_back(commit);
-  SetEvent(cache_queues_signal_);
+  cache_queues_signal_.notify_one();
 }
 
 //-----------------------------------------------------------------------------
@@ -707,7 +730,7 @@ void CacheThread::OnTree(CacheTreeRef tree)
   FLOG(log_read_, "Got tree: %1%") % tree->id_;
   guard g(cache_queues_lock_);
   tree_queue_.push_back(tree); 
-  SetEvent(cache_queues_signal_);
+  cache_queues_signal_.notify_one();
 }
 
 //-----------------------------------------------------------------------------
@@ -717,7 +740,7 @@ void CacheThread::OnBlob(CacheBlobRef blob)
   FLOG(log_read_, "Got blob: %1%") % blob->id_;
   guard g(cache_queues_lock_);
   blob_queue_.push_back(blob);
-  SetEvent(cache_queues_signal_);
+  cache_queues_signal_.notify_one();
 }
 
 //-----------------------------------------------------------------------------
@@ -725,9 +748,10 @@ void CacheThread::OnBlob(CacheBlobRef blob)
 //-----------------------------------------------------------------------------
 
 Cache::Cache(boost::restricted)
-: log_("Cache",LogDefaults_Disable),
-cache_thread_(log_/"Thread", "E:/SCM/qsmp/build/qsmp_indexer/debug/test/")
+: log_("Cache")
+, cache_thread_(log_/"Thread", "/home/james/scm/qsmp/build/qsmp_indexer/test/")
 {
+  LOG(log_) << "Init";
 }
 
 //-----------------------------------------------------------------------------

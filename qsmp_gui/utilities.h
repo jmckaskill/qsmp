@@ -21,12 +21,16 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/concept_check.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/range.hpp>
+#include <boost/range/concepts.hpp>
 #include <boost/shared_ptr.hpp>
 #include <iterator>
 #include <ostream>
 #include <qsmp_gui/common.h>
 #include <qsmp_lib/Log.h>
 #include <QtCore/qnamespace.h>
+#include <QtCore/qstring.h>
+#include <QtGui/qwidget.h>
 #include <string>
 
 QSMP_BEGIN
@@ -192,7 +196,7 @@ struct TestExtension
   {}
   bool operator()(const Media& entry)const
   {
-    return pred_(entry.path_.extension());
+    return pred_(entry.path());
   }
 
   template<class Path>
@@ -320,7 +324,7 @@ void sort(T range, MetadataType type, SortingOrder order)
 {
   BOOST_CONCEPT_ASSERT((boost::RandomAccessRangeConcept<T>));
   BOOST_CONCEPT_ASSERT((boost_concepts::LvalueIteratorConcept<typename boost::range_iterator<T>::type>));
-  std::sort(boost::begin(range),boost::end(range),mediaOrdering<boost::range_value<T>::type>(type,order));
+  std::sort(boost::begin(range),boost::end(range),mediaOrdering<typename boost::range_value<T>::type>(type,order));
 }
 
 //-----------------------------------------------------------------------------
@@ -492,6 +496,8 @@ struct Select2ndConst
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
+#ifdef WIN32
+
 struct ScopeProfile
 {
   ScopeProfile(DWORD& ticks)
@@ -518,6 +524,10 @@ struct ScopeProfile
     ticks = 0;\
     i = 0;\
   }
+
+#else
+#define QSMP_PROFILE(context, function)
+#endif
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

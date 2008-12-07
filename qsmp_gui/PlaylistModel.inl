@@ -46,7 +46,7 @@ QVariant PlaylistModel<RangeFunction>::data(const QModelIndex &index, int role /
   if (role == Qt::DisplayRole &&
       index.row() < boost::distance(entries_))
   {
-    boost::range_iterator<Range>::type ii = boost::begin(entries_);
+    typename boost::range_iterator<Range>::type ii = boost::begin(entries_);
     std::advance(ii, index.row());
 
     switch(index.column())
@@ -136,3 +136,4 @@ void PlaylistModel<RangeFunction>::sort(int column, Qt::SortOrder order /* = Qt:
 QSMP_END
 
 #endif
+

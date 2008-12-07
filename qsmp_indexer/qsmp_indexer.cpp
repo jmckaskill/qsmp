@@ -40,7 +40,7 @@ using boost::scoped_ptr;
 
 QSMPINDEXER_BEGIN
 
-char* id_lookup[] = {
+const char* id_lookup[] = {
   "no_field",//ID3FN_NOFIELD
   "text_encoding",//ID3FN_TEXTENC
   "text",//ID3FN_TEXT
@@ -66,9 +66,9 @@ char* id_lookup[] = {
   "timestamp_format",//ID3FN_TIMESTAMPFORMAT
   "content_type"//ID3FN_CONTENTTYPE
 };
-BOOST_STATIC_ASSERT(sizeof(id_lookup)/sizeof(char*) == ID3FN_LASTFIELDID);
+BOOST_STATIC_ASSERT(sizeof(id_lookup)/sizeof(const char*) == ID3FN_LASTFIELDID);
 
-char* frame_lookup[] = {
+const char* frame_lookup[] = {
   "unknown",              /* ???? ID3FID_NOFRAME = 0,       *< No known frame */
   "audio_crypto",         /* AENC ID3FID_AUDIOCRYPTO,       *< Audio encryption */
   "picture",              /* APIC ID3FID_PICTURE,           *< Attached picture */
@@ -165,7 +165,7 @@ char* frame_lookup[] = {
   "metacrypto",           /*      ID3FID_METACRYPTO,        *< Encrypted meta frame (id3v2.2.x) */
   "metacompression"       /*      ID3FID_METACOMPRESSION,   *< Compressed meta frame (id3v2.2.1) */
 };
-BOOST_STATIC_ASSERT(sizeof(frame_lookup)/sizeof(char*) == ID3FID_LASTFRAMEID);
+BOOST_STATIC_ASSERT(sizeof(frame_lookup)/sizeof(const char*) == ID3FID_LASTFRAMEID);
 
 const char* lookup_field(ID3_FieldID id)
 {
@@ -431,3 +431,4 @@ int main(int argc, char* argv[])
 
   return 0;
 }
+

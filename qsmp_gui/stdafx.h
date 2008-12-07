@@ -15,7 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.      *
  ******************************************************************************/
 
+#ifndef QSMP_STDAFX_H_
+#define QSMP_STDAFX_H_
+
 #include "qsmp_gui/common.h"
+
+#ifdef PRECOMPILING
 
 // All third party headers should go in here (even if they are used in only one file)
 // This file is then precompiled
@@ -70,8 +75,14 @@ extern "C"
 //Id3lib Includes
 #include <id3/tag.h>
 
+#endif
+
+//QGlobal defines macros below which we undef and replace with our own versions
+#include <QtCore/qglobal.h>
+
 #undef QT_BEGIN_MOC_NAMESPACE
 #undef QT_END_MOC_NAMESPACE
 #define QT_BEGIN_MOC_NAMESPACE QSMP_BEGIN
 #define QT_END_MOC_NAMESPACE QSMP_END
 
+#endif

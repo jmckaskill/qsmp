@@ -16,8 +16,18 @@
  ******************************************************************************/
 
 #include "stdafx.h"
+#include <boost/algorithm/string.hpp>
+#include <boost/bind.hpp>
+#include <boost/range.hpp>
+#include <iostream>
 #include <qsmp_gui/LuaTcpConsole.h>
 #include <qsmp_gui/LuaTcpConsole.moc>
+extern "C"
+{
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
+}
 
 QSMP_BEGIN
 

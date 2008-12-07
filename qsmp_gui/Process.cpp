@@ -16,16 +16,22 @@
  ******************************************************************************/
 
 #include "stdafx.h"
+#include <boost/array.hpp>
+#include <boost/foreach.hpp>
 #include <qsmp_gui/common.h>
 #include <qsmp_gui/Process.h>
 
+#define foreach BOOST_FOREACH
+
 QSMP_BEGIN
 
+#ifdef WIN32
+
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-Win32Process::Win32Process(const std::string& process, const fs::path& working_dir, const std::string& arguments)
+Win32Process::Win32Process(LogContext log, const std::string& process, const fs::path& working_dir, const std::vector<std::string>& arguments);
 : stdin_(INVALID_HANDLE_VALUE),
   stdout_(INVALID_HANDLE_VALUE),
   stderr_(INVALID_HANDLE_VALUE)
@@ -35,7 +41,7 @@ Win32Process::Win32Process(const std::string& process, const fs::path& working_d
 
 //-----------------------------------------------------------------------------
 
-void Win32Process::Run(const std::string& process, const fs::path& working_dir, const std::string& arguments)
+void Win32Process::Run(const std::string& process, const fs::path& working_dir, const std::vector<std::string>& arguments)
 {
   process_     = process;
   working_dir_ = working_dir;
@@ -78,7 +84,9 @@ void Win32Process::Run()
   startup_info.hStdOutput = other_stdout;
   startup_info.hStdError  = other_stderr;
 
-  std::string command_line = "\"" + process_ + "\" " + arguments_;
+  std::string command_line = "\"" + process_ + "\"";
+  foreach(std::string& str, arguments_)
+    command_line += " \"" + str + "\"";
 
   BOOL success = ::CreateProcessA(
     process_.c_str(), //application name
@@ -125,5 +133,167 @@ void Win32Process::Terminate(int exit_code)
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+
+#endif
+
+
+#ifdef UNIX 
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+PosixProcess::PosixProcess(LogContext log)
+: log_(log),
+  log_errno_(log/"errno"),
+  stdin_fd_(-1),
+  stdout_fd_(-1),
+  stderr_fd_(-1),
+  pid_(-1)
+{
+  LOG(log_) << "Init";
+}
+
+//-----------------------------------------------------------------------------
+
+PosixProcess::PosixProcess(LogContext log, const std::string& process, const fs::path& working_dir, const std::vector<std::string>& arguments)
+: log_(log),
+  log_errno_(log/"errno"),
+  process_(process),
+  working_dir_(working_dir),
+  arguments_(arguments),
+  stdin_fd_(-1),
+  stdout_fd_(-1),
+  stderr_fd_(-1),
+  pid_(-1)
+{
+  LOG(log_) << "Init";
+  Run();
+}
+
+//-----------------------------------------------------------------------------
+
+PosixProcess::~PosixProcess()
+{
+  LOG(log_) << "Shutdown";
+  if (stdin_fd_ != -1)
+    close(stdin_fd_);
+  if (stdout_fd_ != -1)
+    close(stdout_fd_);
+  if (stderr_fd_ != -1)
+    close(stderr_fd_);
+}
+
+//-----------------------------------------------------------------------------
+
+void PosixProcess::Run(const std::string& process, const fs::path& working_dir, const std::vector<std::string>& arguments)
+{
+  process_      = process;
+  working_dir_  = working_dir;
+  arguments_    = arguments;
+  Run();
+}
+
+//-----------------------------------------------------------------------------
+
+enum
+{
+  FD_STDIN    = 0,
+  FD_STDOUT   = 1,
+  FD_STDERR   = 2,
+
+  FD_READ     = 0,
+  FD_WRITE    = 1,
+};
+
+void PosixProcess::Run()
+{
+  LOG(log_) << "Run";
+  using boost::array;
+  array<array<int,2>, 3> fds;
+  pipe(&fds[0][0]);
+  pipe(&fds[1][0]);
+  pipe(&fds[2][0]);
+  std::string working_dir = working_dir_.string();
+  std::string process     = process_;
+  std::vector<char*> arguments;
+  arguments.reserve(arguments_.size() + 1);
+
+  FLOG(log_, "Process: %1%, Working Dir: %2%") % process % working_dir;
+  {
+    qsmp::Log logger(log_);
+    logger << "Arguments: ";
+    foreach(std::string& str, arguments_)
+    {
+      arguments.push_back(const_cast<char*>(str.c_str()));
+      logger << " \"" << str << "\"";
+    }
+  }
+  arguments.push_back(NULL);
+  
+  int pid = fork();
+  switch(pid)
+  {
+  case 0:
+    LOG(log_) << "Child context";
+    //child context
+    //setup our pipe fds as the local stdin, stdout, stderr
+    if (dup2(fds[FD_STDIN][FD_READ], STDIN_FILENO) == -1)
+      ERRNO_LOG(log_errno_);
+    if (dup2(fds[FD_STDOUT][FD_WRITE], STDOUT_FILENO) == -1)
+      ERRNO_LOG(log_errno_);
+    if (dup2(fds[FD_STDERR][FD_WRITE], STDERR_FILENO) == -1)
+      ERRNO_LOG(log_errno_);
+    //close all of the fds as we no longer need them
+    for (int i = 0; i < fds.size(); i++)
+      for (int j = 0; j < fds[i].size(); j++)
+        if(close(fds[i][j]))
+          ERRNO_LOG(log_errno_);
+    //change working dir
+    if (chdir(working_dir.c_str()))
+      ERRNO_LOG(log_errno_);
+    //and finally execute the child process
+    if (execvp(process_.c_str(), arguments.data()))
+      ERRNO_LOG(log_errno_);
+    break;
+  case -1:
+    WARNING(log_) << "Fork failed";
+    ERRNO_LOG(log_errno_);
+    pid_ = pid;
+    //close all of the fds as we no longer need them
+    for (int i = 0; i < fds.size(); i++)
+      for (int j = 0; j < fds[i].size(); j++)
+        if(close(fds[i][j]))
+          ERRNO_LOG(log_errno_);
+    break;
+  default:
+    //parent context - success
+    pid_ = pid;
+    //close read handle of stdin and write handles of stdout/stderr
+    if (close(fds[FD_STDIN][FD_READ]))
+      ERRNO_LOG(log_errno_);
+    if (close(fds[FD_STDOUT][FD_WRITE]))
+      ERRNO_LOG(log_errno_);
+    if (close(fds[FD_STDERR][FD_WRITE]))
+      ERRNO_LOG(log_errno_);
+    stdin_fd_   = fds[FD_STDIN][FD_WRITE];
+    stdout_fd_  = fds[FD_STDOUT][FD_READ];
+    stderr_fd_  = fds[FD_STDERR][FD_READ];
+    FLOG(log_, "Parent context: Child PID %1%, stdin %2%, stdout %3%, stderr %4%")
+      % pid_
+      % stdin_fd_
+      % stdout_fd_
+      % stderr_fd_;
+    
+    break;
+  }
+  
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+#endif
 
 QSMP_END

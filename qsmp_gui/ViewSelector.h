@@ -29,6 +29,7 @@
 #include <qsmp_lib/Log.h>
 #include <QtCore/qabstractitemmodel.h>
 #include <QtCore/qvariant.h>
+#include <QtGui/qtreeview.h>
 #include <tcl/sequential_tree.h>
 
 QSMP_BEGIN
@@ -39,11 +40,11 @@ QSMP_BEGIN
 
 class ViewTreeModel;
 
-class ViewTreeNode : public Model::TreeModelNode<ViewTreeNode, ViewTreeModel>
+class ViewTreeNode : public TreeModelNode<ViewTreeNode, ViewTreeModel>
 {
 public:
   ViewTreeNode(ViewTreeModel* model)
-    : TreeModelNode(model)
+    : TreeModelNode<ViewTreeNode, ViewTreeModel>(model)
   {}
 
   int                 columnCount()const{return 1;}
@@ -60,12 +61,12 @@ private:
 
 //-----------------------------------------------------------------------------
 
-class ViewTreeModel : public Model::TreeModel<ViewTreeNode, ViewTreeModel>
+class ViewTreeModel : public TreeModel<ViewTreeNode, ViewTreeModel>
 {
   Q_OBJECT
 public:
   ViewTreeModel(QLayout* layout)
-    : TreeModel(this),
+    : TreeModel<ViewTreeNode, ViewTreeModel>(this),
       layout_(layout),
       old_widget_(NULL)
   {}
@@ -104,3 +105,4 @@ private:
 QSMP_END
 
 #endif
+

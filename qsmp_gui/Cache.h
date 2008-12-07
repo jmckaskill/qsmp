@@ -27,6 +27,7 @@
 #include <boost/ptr_container/ptr_map.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
+#include <boost/thread/condition_variable.hpp>
 #include <boost/unordered_map.hpp>
 #include <qsmp_gui/ViewSelector.h>
 #include <qsmp_gui/Process.h>
@@ -90,7 +91,7 @@ public:
   void FromTextString(const Range1T& range)
   {
     ASSERTE("Cache",boost::size(range) == 40);
-    boost::range_iterator<Range1T>::type ii = boost::begin(range);
+    typename boost::range_iterator<Range1T>::type ii = boost::begin(range);
     string_ = QString::fromAscii(&*ii, 40);
     for(size_t i = 0; i < 20; ++i)
     {
@@ -253,7 +254,6 @@ class CacheThread
   QSMP_NON_COPYABLE(CacheThread);
 public:
   CacheThread(LogContext log, const fs::path& path);
-  ~CacheThread();
 
   typedef boost::function<void ()> FinishCallback;
   typedef boost::function<void (const CacheId&)> RequestCallback;
@@ -287,10 +287,10 @@ private:
   std::queue<shared_ptr<Task> >         task_queue_;
   shared_ptr<Task>                      current_task_;
   boost::mutex                          task_queue_lock_;
-  HANDLE                                task_signal_;
+  boost::condition_variable             task_signal_;
 
   boost::mutex                          cache_queues_lock_;
-  HANDLE                                cache_queues_signal_;
+  boost::condition_variable             cache_queues_signal_;
   std::deque<CacheCommitRef>            commit_queue_;
   std::deque<CacheTreeRef>              tree_queue_;
   std::deque<CacheBlobRef>              blob_queue_;
@@ -369,3 +369,4 @@ private:
 QSMP_END
 
 #endif
+

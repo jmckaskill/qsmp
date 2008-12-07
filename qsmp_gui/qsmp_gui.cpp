@@ -19,17 +19,17 @@
 
 #include <algorithm>
 #include <boost/bind.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/stream.hpp>
+#include <boost/shared_ptr.hpp>
 #include <ctime>
 #include <iostream>
 #include <qsmp_gui/Cache.h>
 #include <qsmp_gui/CacheModel.h>
 #include <qsmp_gui/HotkeyWindow.h>
 #include <qsmp_gui/LuaTcpConsole.h>
-#include <qsmp_gui/PlaylistModel.h>
 #include <qsmp_gui/Player.h>
+#include <qsmp_gui/PlaylistModel.h>
 #include <qsmp_gui/PlaylistView.h>
 #include <qsmp_gui/Process.h>
 #include <qsmp_gui/utilities.h>
@@ -41,7 +41,6 @@
 #include <QtGui/qsplitter.h>
 #include <string>
 #include <vector>
-#include <windows.h>
 
 
 //-----------------------------------------------------------------------------
@@ -89,7 +88,7 @@ int main(int argc, char **argv)
     app.setOrganizationName("Foobar NZ");
     app.setOrganizationDomain("foobar.co.nz");
 
-    Cache::lease();
+    //Cache::lease();
 
     std::string path = (argc > 1) ? argv[1] : "";
 
@@ -124,11 +123,10 @@ int main(int argc, char **argv)
 
     views->model()->AddNewView("History", new LayoutWidget<QVBoxLayout>(new HistoryView(&history),
                                                                         new PlayerControl(&player, &history)));
-    views->model()->AddNewView("Cache", new CacheView("7a1e8b5b31087018f993cfd39e104d33344fe86b"));
+    views->model()->AddNewView("Cache", new CacheView("40bc33055c2f91d8e5690907b573eee95e5c6107"));
 
+#ifdef WIN32
     HotkeyWindow window;
-    window.setLayout(view_layout);
-    window.show();
 
     window.RegisterHotkeys();
 
@@ -136,10 +134,12 @@ int main(int argc, char **argv)
     QObject::connect(&window, SIGNAL(OnNext()), &history, SLOT(Next()));
     QObject::connect(&window, SIGNAL(OnPlayPause()), &player, SLOT(PlayPause()));
     QObject::connect(&window, SIGNAL(OnStop()), &player, SLOT(Stop()));
+#else
+    QWidget window;
+#endif
 
-    //QObject::connect(view,SIGNAL(doubleClicked(QModelIndex)),model,SLOT(onDoubleClicked(QModelIndex)));
-    //QObject::connect(model,SIGNAL(itemSelected(QString)),mywindow.control,SLOT(setFilePath(QString)));
-
+    window.setLayout(view_layout);
+    window.show();
 
     //LuaTcpServer lua;
 

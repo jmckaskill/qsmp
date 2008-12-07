@@ -37,8 +37,14 @@
 #include <tcl/tree.h>
 #include <utility>
 
+#ifdef UNIX
+#include <string.h>
+#include <errno.h>
+#endif
+
 
 #define LOG(context) qsmp::Log(context,LogSeverity_Normal,__FILE__,__LINE__)
+#define LOG_RAW(context) qsmp::Log(context,LogSeverity_Normal,__FILE__,__LINE__, true)
 #define WARNING(context) qsmp::Log(context,LogSeverity_Warning,__FILE__,__LINE__)
 #define FATAL(context) qsmp::Log(context,LogSeverity_Fatal,__FILE__,__LINE__)
 #define FLOG(context,format_string) qsmp::FormatLog(context,format_string,LogSeverity_Normal,__FILE__,__LINE__)
@@ -52,6 +58,11 @@
 
 #ifdef WIN32
 #define WIN32_FATAL(context) qsmp::Win32Fatal(context,__FILE__,__LINE__)
+#endif
+#ifdef UNIX
+#define ERRNO_LOG(context)     qsmp::ErrnoLog(context, LogSeverity_Normal, __FILE__, __LINE__)
+#define ERRNO_WARNING(context) qsmp::ErrnoLog(context, LogSeverity_Warning, __FILE__, __LINE__)
+#define ERRNO_FATAL(context)   qsmp::ErrnoLog(context, LogSeverity_Fatal, __FILE__, __LINE__)
 #endif
 
 
@@ -170,9 +181,6 @@ private:
 //-----------------------------------------------------------------------------
 
 typedef tcl::tree<LogContextData>::iterator LogContextIter;
-struct FileLineInfo : public std::pair<const char*,int>
-{FileLineInfo():pair(NULL,-1){}
- FileLineInfo(const char* file, int line):pair(file,line){}};
 
 //void QtMsgHandler(QtMsgType type, const char* buf);
 
@@ -265,7 +273,9 @@ public:
   LogBase(const LogContext& context,
           LogSeverity severity,
           const char* file_name,
-          int line_no);
+          int line_no,
+          bool raw);
+  ~LogBase();
 
   bool mute()const{return data_ == NULL;}
 
@@ -276,6 +286,7 @@ protected:
   LogContext                  context_;
   LogSeverity                 severity_;
   LoggerData*                 data_;
+  bool                        raw_;
 };
 
 //-----------------------------------------------------------------------------
@@ -283,8 +294,7 @@ protected:
 class Log : public LogBase
 {
 public:
-  Log(const LogContext& context, LogSeverity severity = LogSeverity_Normal, const char* file_name = NULL, int line_no = -1);
-  ~Log();
+  Log(const LogContext& context, LogSeverity severity = LogSeverity_Normal, const char* file_name = NULL, int line_no = -1, bool raw = false);
 
   template<class T>
   Log& operator<<(const T& a)
@@ -303,7 +313,7 @@ public:
 class FormatLog : public LogBase
 {
 public:
-  FormatLog(const LogContext& context, const char* format_string, LogSeverity severity = LogSeverity_Normal, const char* file_name = NULL, int line_no = -1);
+  FormatLog(const LogContext& context, const char* format_string, LogSeverity severity = LogSeverity_Normal, const char* file_name = NULL, int line_no = -1, bool raw = false);
   ~FormatLog();
 
   bool mute()const{return data_ == NULL;}
@@ -338,6 +348,18 @@ inline void Win32Fatal(LogContext context, const char* file_name, int line_no)
     (LPSTR)&message, 0, NULL);
   Log(context,LogSeverity_Fatal,file_name,line_no) << message;
   LocalFree(message);
+}
+#endif
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+#ifdef UNIX
+inline void ErrnoLog(LogContext context, LogSeverity severity, const char* file_name, int line_no)
+{
+  int errnum = errno;
+  qsmp::Log(context, severity, file_name, line_no) << strerror(errnum);
 }
 #endif
 

@@ -20,6 +20,7 @@
 #include <boost/bind.hpp>
 #include <qsmp_gui/ViewSelector.h>
 #include <qsmp_gui/ViewSelector.moc>
+#include <QtGui/qlayout.h>
 
 QSMP_BEGIN
 
@@ -100,3 +101,4 @@ ViewTree::ViewTree(QLayout* layout)
 //-----------------------------------------------------------------------------
 
 QSMP_END
+
